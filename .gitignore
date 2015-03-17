@@ -1,0 +1,9 @@
+# exlude everything by default
+*
+
+# track these files
+!.gitignore
+!bin/scp-sucks.sh
+
+# magic to make subdir matches work
+!*/
