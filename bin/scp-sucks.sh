@@ -86,8 +86,8 @@ exec 3< <(ssh "$dst_host_spec" " \
   done=0; \
   trap 'kill 0' EXIT; \
   trap 'done=1' SIGUSR1; \
-  exec 3< <(nc -l $nc_port && kill -USR1 \$\$ || kill -HUP \$\$); \
-  exec 4< <(dd bs=$bs seek=$pos of=\"$dst_file\" <&3 && kill -USR1 \$\$ || kill -HUP \$\$); \
+  exec 3< <(nice nc -l $nc_port && kill -USR1 \$\$ || kill -HUP \$\$); \
+  exec 4< <(nice dd bs=$bs seek=$pos of=\"$dst_file\" <&3 && kill -USR1 \$\$ || kill -HUP \$\$); \
   sleep 1 && echo ok; \
   while [[ \$done != 1 ]]; do sleep 1; done" 2>&1)
 
