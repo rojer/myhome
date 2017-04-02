@@ -1,0 +1,25 @@
+{
+  "i2c": {
+    "enable": true,
+    "sda_gpio": 4,
+    "scl_gpio": 5
+  },
+  "mqtt": {
+    "enable": false
+  },
+  "wifi": {
+    "ap": {
+      "ssid": "ScotsPine",
+      "pass": "PinusSilvestris"
+    }
+  },
+  "device": {
+    "id": "esp8266_DA803A"
+  },
+  "debug": {
+    "udp_log_addr": "192.168.11.11:1234"
+  },
+  "sntp": {
+    "enable": true
+  }
+}
