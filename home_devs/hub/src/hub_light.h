@@ -1,3 +1,7 @@
-#include "fw/src/mgos_app.h"
+#include <stdbool.h>
 
-enum mgos_app_init_result hub_light_init(void);
+#pragma once
+
+bool hub_light_get_status(bool *sensor_ok, bool *lights_on);
+
+bool hub_light_init(void);
