@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 
+#include "common/cs_dbg.h"
+
 #include "mgos_gpio.h"
 #include "mgos_i2c.h"
 #include "mgos_sys_config.h"
@@ -59,7 +61,7 @@ bool hub_light_get_status(bool *sensor_ok, bool *lights_on) {
 bool hub_light_init(void) {
   const struct mgos_config_hub_light *lcfg = &mgos_sys_config_get_hub()->light;
   mgos_gpio_set_mode(lcfg->relay_gpio, MGOS_GPIO_MODE_OUTPUT);
-  mgos_set_timer(lcfg->check_interval_ms, MGOS_TIMER_REPEAT, lights_timer_cb,
+  mgos_set_timer(lcfg->check_interval * 1000, MGOS_TIMER_REPEAT, lights_timer_cb,
                  NULL);
   mgos_invoke_cb(lights_timer_cb, NULL, false /* from_isr */);
   return true;

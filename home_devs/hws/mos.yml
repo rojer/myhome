@@ -1,0 +1,26 @@
+author: rojer
+platform: esp8266
+description: Hot water sensor
+version: 1.0
+
+sources:
+  - src
+filesystem:
+  - fs
+libs:
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+config_schema:
+  - ["sensor_id", "i", -1, {title: "Sensor ID"}]
+  - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
+  - ["hub_address", "s", "", {title: "Report temperature to this address"}]
+
+manifest_version: 2017-06-29

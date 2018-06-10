@@ -1,0 +1,35 @@
+author: mongoose-os
+platform: esp8266
+description: Dallas Temperature sensor usage example (C/C++)
+version: 1.0
+
+sources:
+  - src
+filesystem:
+  - fs
+libs:
+  - origin: https://github.com/mongoose-os-libs/i2c
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/si7005
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+config_schema:
+  - ["i2c.enable", true]
+  - ["i2c.sda_gpio", 13]
+  - ["i2c.scl_gpio", 12]
+  - ["sensor_id", "i", -1, {title: "Sensor ID"}]
+  - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
+  - ["hub_address", "s", "", {title: "Report temperature to this address"}]
+
+build_vars:
+  #FLASH_SIZE: 1048576
+
+manifest_version: 2017-06-29

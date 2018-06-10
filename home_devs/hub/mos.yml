@@ -12,12 +12,12 @@ config_schema:
   - ["hub.light.thr_lo", "i", 10, {"title": "Threshold for on -> off"}]
   - ["hub.light.thr_hi", "i", 15, {"title": "Threshold for off -> on"}]
   - ["hub.light.relay_gpio", "i", 14, {"title": "Relay GPIO"}]
-  - ["hub.light.check_interval_ms", "i", 300000, {"title": "Light check interval"}]
+  - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
   - ["hub.heater", "o", {"title": "Heater settings"}]
   - ["hub.heater.enable", "b", true, {"title": "Enable heater control"}]
   - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
   - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
-  - ["hub.status_interval_ms", "i", 1000, {"title": "Status LED GPIO"}]
+  - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/http-server

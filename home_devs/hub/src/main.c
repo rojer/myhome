@@ -1,3 +1,5 @@
+#include "common/cs_dbg.h"
+
 #include "mgos_app.h"
 #include "mgos_gpio.h"
 #include "mgos_sys_config.h"
@@ -25,6 +27,7 @@ static void status_timer_cb(void *arg) {
        (lights_on ? "on" : "off"), (heater_on ? "on" : "off")));
   (void) arg;
 }
+
 enum mgos_app_init_result mgos_app_init(void) {
   enum mgos_app_init_result res = MGOS_APP_INIT_ERROR;
 
@@ -38,13 +41,13 @@ enum mgos_app_init_result mgos_app_init(void) {
     goto out;
   }
 
-  if (mgos_sys_config_get_hub_status_interval_ms() > 0) {
+  if (mgos_sys_config_get_hub_status_interval() > 0) {
     s_sl_gpio = mgos_sys_config_get_hub_status_led_gpio();
     if (s_sl_gpio >= 0) {
       mgos_gpio_write(s_sl_gpio, 0);
       mgos_gpio_set_mode(s_sl_gpio, MGOS_GPIO_MODE_OUTPUT);
     }
-    mgos_set_timer(mgos_sys_config_get_hub_status_interval_ms(),
+    mgos_set_timer(mgos_sys_config_get_hub_status_interval() * 1000,
                    MGOS_TIMER_REPEAT, status_timer_cb, NULL);
   }
 
