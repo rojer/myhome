@@ -16,6 +16,7 @@ config_schema:
   - ["hub.heater", "o", {"title": "Heater settings"}]
   - ["hub.heater.enable", "b", true, {"title": "Enable heater control"}]
   - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
+  - ["hub.heater.s0_thresh", "d", 20.0, {"title": "Temperature threshold for sensor 0"}]
   - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
   - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
 
@@ -24,6 +25,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota

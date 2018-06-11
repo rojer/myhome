@@ -1,5 +1,6 @@
 #include "common/cs_dbg.h"
 
+#include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_gpio.h"
 #include "mgos_sys_config.h"
@@ -15,16 +16,19 @@ static void blink_off(void *arg) {
 }
 
 static void status_timer_cb(void *arg) {
+  double now = mg_time();
   if (s_sl_gpio >= 0) {
     mgos_gpio_write(s_sl_gpio, 1);
     mgos_set_timer(100, 0, blink_off, (void *) s_sl_gpio);
   }
   bool sensor_ok, lights_on, heater_on;
+  double last_heater_action_ts;
   hub_light_get_status(&sensor_ok, &lights_on);
-  hub_heater_get_status(&heater_on);
-  LOG(LL_INFO,
-      ("Light sensor %s, lights %s; heater %s", (sensor_ok ? "ok" : "error"),
-       (lights_on ? "on" : "off"), (heater_on ? "on" : "off")));
+  hub_heater_get_status(&heater_on, &last_heater_action_ts);
+  int ths = (last_heater_action_ts > 0 ? now - last_heater_action_ts : -1);
+  LOG(LL_INFO, ("Light sensor %s, lights %s; heater %s (last action %d ago)",
+                (sensor_ok ? "ok" : "error"), (lights_on ? "on" : "off"),
+                (heater_on ? "on" : "off"), ths));
   (void) arg;
 }
 
