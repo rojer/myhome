@@ -1,6 +1,11 @@
 name: hub
 arch: esp8266
-version: 1.0
+version: 1.5.0
+
+libs_version: 2.6.0
+modules_version: 2.6.0
+mongoose_os_version: 2.6.0
+
 sources:
   - src
 filesystem:
@@ -16,7 +21,10 @@ config_schema:
   - ["hub.heater", "o", {"title": "Heater settings"}]
   - ["hub.heater.enable", "b", true, {"title": "Enable heater control"}]
   - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
-  - ["hub.heater.s0_thresh", "d", 20.0, {"title": "Temperature threshold for sensor 0"}]
+  - ["hub.heater.s0.min", "d", 21.0, {"title": "Temperature threshold for sensor 0"}]
+  - ["hub.heater.s0.max", "d", 21.5, {"title": "Temperature threshold for sensor 0"}]
+  - ["hub.heater.s1.min", "d", 55.0, {"title": "Temperature threshold for sensor 1"}]
+  - ["hub.heater.s1.max", "d", 60.0, {"title": "Temperature threshold for sensor 1"}]
   - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
   - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
 
@@ -25,6 +33,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/rpc-common
+    version: e0d4d77abea55f3e14b3e6358124b6f978924bb2
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c

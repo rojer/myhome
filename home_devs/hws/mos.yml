@@ -3,11 +3,16 @@ platform: esp8266
 description: Hot water sensor
 version: 1.0
 
+libs_version: 2.6.0
+modules_version: 2.6.0
+mongoose_os_version: 2.6.0
+
 sources:
   - src
 filesystem:
   - fs
 libs:
+  - origin: https://github.com/mongoose-os-libs/arduino-dallas-temperature
   - origin: https://github.com/mongoose-os-libs/ota-http-client
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/rpc-common

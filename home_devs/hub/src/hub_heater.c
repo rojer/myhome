@@ -15,17 +15,33 @@ struct temp_sensor_data {
   double temp;
 };
 
-struct hws_sensor_data {
-  double ts;
-  bool water_is_hot;
-};
-
 struct temp_sensor_data s_tsd[2];
-struct hws_sensor_data s_hwsd;
 double s_last_eval, s_last_action_ts;
 
 static const char *onoff(bool on) {
   return (on ? "on" : "off");
+}
+
+static bool check_thresh(int si, bool heater_is_on, struct temp_sensor_data sd, double s_min, double s_max) {
+  bool want_on;
+  if (s_min < 0 || s_max < 0) {
+    want_on = false;
+  } else if (sd.ts == 0) {
+    LOG(LL_INFO, ("S%d: no data yet", si));
+    want_on = false;
+  } else if (mg_time() - sd.ts > 300) {
+    LOG(LL_INFO, ("S%d: data is stale", si));
+    want_on = false;
+  } else if (!heater_is_on && sd.temp < s_min) {
+    LOG(LL_INFO, ("S%d: %.3lf < %.3lf", si, sd.temp, s_min));
+    want_on = true;
+  } else if (heater_is_on && sd.temp < s_max) {
+    want_on = true;
+  } else {
+    LOG(LL_INFO, ("S%d: %.3lf < %.3lf < %.3lf", si, s_min, sd.temp, s_max));
+    want_on = false;
+  }
+  return want_on;
 }
 
 static void hub_heater_eval(void) {
@@ -33,31 +49,10 @@ static void hub_heater_eval(void) {
   double now = mg_time();
   if (s_deadline != 0) return;  // Heater is under manual control.
   if (now - s_last_eval < 60) return;
-  if (now - s_last_action_ts < 300) return;  // Prevent flapping.
-  bool s0_data_valid = (now - s_tsd[0].ts) < 300;
-  double s0_thr = mgos_sys_config_get_hub_heater_s0_thresh();
-  if (s0_thr > 0) {
-    if (s0_data_valid) {
-      if (s_tsd[0].temp < s0_thr) {
-        want_on = true;
-        LOG(LL_INFO, ("S0 temp %lf < %lf", s_tsd[0].temp, s0_thr));
-      } else {
-        LOG(LL_ERROR, ("S0 temp is ok (%lf >= %lf)", s_tsd[0].temp, s0_thr));
-      }
-    } else {
-      LOG(LL_ERROR, ("S0 sensor data is stale"));
-    }
-  }
-  if (now - s_hwsd.ts < 300) {
-    if (!s_hwsd.water_is_hot) {
-      want_on = true;
-      LOG(LL_INFO, ("Hot water is cold"));
-    } else {
-      LOG(LL_INFO, ("Hot water is hot"));
-    }
-  } else {
-    LOG(LL_ERROR, ("HWS data is stale"));
-  }
+  want_on |= check_thresh(0, s_heater_on, s_tsd[0],
+                          mgos_sys_config_get_hub_heater_s0_min(), mgos_sys_config_get_hub_heater_s0_max());
+  want_on |= check_thresh(1, s_heater_on, s_tsd[1],
+                          mgos_sys_config_get_hub_heater_s1_min(), mgos_sys_config_get_hub_heater_s1_max());
   if (s_heater_on != want_on) {
     LOG(LL_INFO, ("Heater %s -> %s", onoff(s_heater_on), onoff(want_on)));
     s_heater_on = want_on;
@@ -148,39 +143,20 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
 
   json_scanf(args.p, args.len, ri->args_fmt, &sid, &ts, &temp, &rh);
 
-  LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf, rh: %lf", sid, ts, temp, rh));
+  if (rh > 0) {
+    LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf, rh: %lf", sid, ts, temp, rh));
+  } else {
+    LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf", sid, ts, temp));
+  }
 
   if (sid < 0 || temp == -1000) goto out;
 
   if (sid == 0 && ts > s_tsd[0].ts) {
     s_tsd[0].ts = ts;
     s_tsd[0].temp = temp;
-  }
-
-out:
-  mg_rpc_send_responsef(ri, NULL);
-  (void) cb_arg;
-  (void) fi;
-}
-
-static void sensor_report_hws_handler(struct mg_rpc_request_info *ri,
-                                      void *cb_arg,
-                                      struct mg_rpc_frame_info *fi,
-                                      struct mg_str args) {
-  int sid = -1, hws = 0;
-  double ts = -1;
-
-  json_scanf(args.p, args.len, ri->args_fmt, &sid, &ts, &hws);
-
-  LOG(LL_INFO, ("sid: %d, ts: %lf, hws: %d", sid, ts, hws));
-
-  if (sid < 0) goto out;
-
-  if (sid == 1 && ts > s_hwsd.ts) {
-    s_hwsd.ts = ts;
-    /* HWS is open and pulled up to 1 when the temperature is above the
-     * threshold. */
-    s_hwsd.water_is_hot = hws;
+  } else if (sid == 1 && ts > s_tsd[1].ts) {
+    s_tsd[1].ts = ts;
+    s_tsd[1].temp = temp;
   }
 
 out:
@@ -210,8 +186,6 @@ bool hub_heater_init(void) {
   mg_rpc_add_handler(c, "Sensor.ReportTemp",
                      "{sid: %d, ts: %lf, temp: %lf, rh: %lf}",
                      sensor_report_temp_handler, NULL);
-  mg_rpc_add_handler(c, "Sensor.ReportHWS", "{sid: %d, ts: %lf, hws: %B}",
-                     sensor_report_hws_handler, NULL);
 
   res = true;
 
