@@ -6,6 +6,7 @@
 #include "mgos_sys_config.h"
 #include "mgos_timers.h"
 
+#include "hub.h"
 #include "hub_heater.h"
 #include "hub_light.h"
 
@@ -29,6 +30,10 @@ static void status_timer_cb(void *arg) {
   LOG(LL_INFO, ("Light sensor %s, lights %s; heater %s (last action %d ago)",
                 (sensor_ok ? "ok" : "error"), (lights_on ? "on" : "off"),
                 (heater_on ? "on" : "off"), ths));
+  report_to_server(CTL_SID, LIGHTS_SUBID, now, lights_on);
+  report_to_server(CTL_SID, HEATER_SUBID, now, heater_on);
+  report_to_server(SYS_SID, UPTIME_SUBID, now, mgos_uptime());
+  report_to_server(SYS_SID, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
   (void) arg;
 }
 

@@ -3,12 +3,15 @@
 #include <stdbool.h>
 
 #include "common/cs_dbg.h"
+#include "common/cs_time.h"
 
 #include "mgos_gpio.h"
 #include "mgos_i2c.h"
 #include "mgos_sys_config.h"
 #include "mgos_system.h"
 #include "mgos_timers.h"
+
+#include "hub.h"
 
 /* Light sensor: TSL2550D */
 #define LIGHT_SENSOR_ADDR 0x39
@@ -34,7 +37,7 @@ static void lights_timer_cb(void *arg) {
   double s1 = read_sensor(i2c, 1);
   if (s0 < 0 || s1 < 0) {
     s_sensor_ok = false;
-    s0 = s1 = 0;
+    s0 = s1 = -1;
   } else {
     s_sensor_ok = true;
     if (s0 < lcfg->thr_lo && !s_lights_on) {
@@ -48,6 +51,9 @@ static void lights_timer_cb(void *arg) {
       LOG(LL_INFO, ("%.2f %.2f", s0, s1));
     }
   }
+  double now = cs_time();
+  report_to_server(LIGHT_SID, 0, now, s0);
+  report_to_server(LIGHT_SID, 1, now, s1);
   mgos_gpio_write(lcfg->relay_gpio, s_lights_on);
   (void) arg;
 }
