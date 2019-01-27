@@ -41,7 +41,4 @@ config_schema:
   - ["provision.led.active_high", false]
   - ["provision.stable_state", 2]
 
-build_vars:
-  #FLASH_SIZE: 1048576
-
 manifest_version: 2017-06-29
