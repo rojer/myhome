@@ -1,37 +1,45 @@
 author: mongoose-os
 platform: esp8266
 description: Dallas Temperature sensor usage example (C/C++)
-version: 1.0
+version: 2.0.0
 
-libs_version: 2.6.0
-modules_version: 2.6.0
-mongoose_os_version: 2.6.0
+libs_version: 2.11.0
+modules_version: 2.11.0
+mongoose_os_version: 2.11.0
 
 sources:
   - src
 filesystem:
   - fs
 libs:
+  - origin: https://github.com/mongoose-os-libs/arduino-dallas-temperature
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-client
   - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/provision
   - origin: https://github.com/mongoose-os-libs/rpc-common
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-service-fs
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/si7005
   - origin: https://github.com/mongoose-os-libs/sntp
   - origin: https://github.com/mongoose-os-libs/wifi
 
 config_schema:
   - ["i2c.enable", true]
-  - ["i2c.sda_gpio", 13]
-  - ["i2c.scl_gpio", 12]
+  - ["i2c.sda_gpio", 12]
+  - ["i2c.scl_gpio", 14]
+  - ["ow_gpio", "i", 13, {title: "OneWire bus GPIO"}]
+  - ["sensor_type", "s", "", {title: "Sensor type"}]
   - ["sensor_id", "i", -1, {title: "Sensor ID"}]
   - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
   - ["hub_address", "s", "", {title: "Report temperature to this address"}]
+  - ["provision.led.pin", 2]
+  - ["provision.led.active_high", false]
+  - ["provision.stable_state", 2]
 
 build_vars:
   #FLASH_SIZE: 1048576
