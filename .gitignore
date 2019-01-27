@@ -1,2 +1,2 @@
-# exlude everything by default
-*
+build/
+deps/
