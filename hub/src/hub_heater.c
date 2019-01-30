@@ -76,9 +76,8 @@ static void heater_timer_cb(void *arg) {
   const struct mgos_config_hub_heater *hcfg =
       &mgos_sys_config_get_hub()->heater;
   if (s_deadline > 0 && s_deadline < now) {
-    s_heater_on = !s_heater_on;
-    LOG(LL_INFO,
-        ("Deadline expired, turning heater %s", (s_heater_on ? "on" : "off")));
+    LOG(LL_INFO, ("Deadline expired"));
+    if (s_heater_on) s_heater_on = false;
     s_deadline = 0;
   }
   hub_heater_eval();

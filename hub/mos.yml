@@ -1,6 +1,6 @@
 name: hub
 arch: esp8266
-version: 1.8.0
+version: 1.8.1
 
 #libs_version: 2.11.0
 #modules_version: 2.11.0
