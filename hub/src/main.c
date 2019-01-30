@@ -12,29 +12,33 @@
 
 static int s_sl_gpio = -1;
 
-static void blink_off(void *arg) {
-  mgos_gpio_write((int) arg, 0);
-}
+static void blink_off(void *arg) { mgos_gpio_write((int)arg, 0); }
 
 static void status_timer_cb(void *arg) {
   double now = mg_time();
+  int ctl_sid = mgos_sys_config_get_hub_ctl_sid();
+  int sys_sid = mgos_sys_config_get_hub_sys_sid();
   if (s_sl_gpio >= 0) {
     mgos_gpio_write(s_sl_gpio, 1);
-    mgos_set_timer(100, 0, blink_off, (void *) s_sl_gpio);
+    mgos_set_timer(100, 0, blink_off, (void *)s_sl_gpio);
   }
-  bool sensor_ok, lights_on, heater_on;
+  bool sensor_ok, lights_on;
+  if (hub_light_get_status(&sensor_ok, &lights_on)) {
+    LOG(LL_INFO, ("Light sensor %s, lights %s", (sensor_ok ? "ok" : "error"),
+                  (lights_on ? "on" : "off")));
+    report_to_server(ctl_sid, LIGHTS_SUBID, now, lights_on);
+  }
+  bool heater_on;
   double last_heater_action_ts;
-  hub_light_get_status(&sensor_ok, &lights_on);
-  hub_heater_get_status(&heater_on, &last_heater_action_ts);
-  int ths = (last_heater_action_ts > 0 ? now - last_heater_action_ts : -1);
-  LOG(LL_INFO, ("Light sensor %s, lights %s; heater %s (last action %d ago)",
-                (sensor_ok ? "ok" : "error"), (lights_on ? "on" : "off"),
-                (heater_on ? "on" : "off"), ths));
-  report_to_server(CTL_SID, LIGHTS_SUBID, now, lights_on);
-  report_to_server(CTL_SID, HEATER_SUBID, now, heater_on);
-  report_to_server(SYS_SID, UPTIME_SUBID, now, mgos_uptime());
-  report_to_server(SYS_SID, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
-  (void) arg;
+  if (hub_heater_get_status(&heater_on, &last_heater_action_ts)) {
+    int ths = (last_heater_action_ts > 0 ? now - last_heater_action_ts : -1);
+    LOG(LL_INFO,
+        ("Heater %s (last action %d ago)", (heater_on ? "on" : "off"), ths));
+    report_to_server(ctl_sid, HEATER_SUBID, now, heater_on);
+  }
+  report_to_server(sys_sid, UPTIME_SUBID, now, mgos_uptime());
+  report_to_server(sys_sid, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
+  (void)arg;
 }
 
 enum mgos_app_init_result mgos_app_init(void) {

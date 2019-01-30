@@ -1,10 +1,10 @@
 name: hub
 arch: esp8266
-version: 1.6.1
+version: 1.8.0
 
-libs_version: 2.11.0
-modules_version: 2.11.0
-mongoose_os_version: 2.11.0
+#libs_version: 2.11.0
+#modules_version: 2.11.0
+#mongoose_os_version: 2.11.0
 
 sources:
   - src
@@ -12,14 +12,18 @@ filesystem:
   - fs
 
 config_schema:
+  - ["i2c.enable", true]
+  - ["i2c.sda_gpio", 4]
+  - ["i2c.scl_gpio", 5]
   - ["hub", "o", {"title": "Hub app settings"}]
   - ["hub.light", "o", {"title": "Outdoor lighting settings"}]
+  - ["hub.light.enable", "b", false, {"title": "Enable lighting control"}]
   - ["hub.light.thr_lo", "i", 10, {"title": "Threshold for on -> off"}]
   - ["hub.light.thr_hi", "i", 15, {"title": "Threshold for off -> on"}]
   - ["hub.light.relay_gpio", "i", 14, {"title": "Relay GPIO"}]
   - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
   - ["hub.heater", "o", {"title": "Heater settings"}]
-  - ["hub.heater.enable", "b", true, {"title": "Enable heater control"}]
+  - ["hub.heater.enable", "b", false, {"title": "Enable heater control"}]
   - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
   - ["hub.heater.s0.min", "d", 21.0, {"title": "Temperature threshold for sensor 0"}]
   - ["hub.heater.s0.max", "d", 21.5, {"title": "Temperature threshold for sensor 0"}]
@@ -28,13 +32,19 @@ config_schema:
   - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
   - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
   - ["hub.data_server_addr", "s", "wss://rojer.me/ss/rpc", {"title": "RPC address of the data server (if enabled)"}]
+  - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-server id"}]
+  - ["hub.sys_sid", "i", 200, {"title": "Control values pseudo-server id"}]
 
 libs:
+  - origin: https://github.com/mongoose-os-libs/cron
+  - origin: https://github.com/mongoose-os-libs/crontab
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/rpc-common
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-cron
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
   - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota

@@ -3,6 +3,7 @@
 #include "common/cs_dbg.h"
 #include "common/cs_time.h"
 
+#include "mgos_crontab.h"
 #include "mgos_gpio.h"
 #include "mgos_rpc.h"
 #include "mgos_sys_config.h"
@@ -10,6 +11,7 @@
 
 #include "hub.h"
 
+static bool s_enabled = false;
 bool s_heater_on = false;
 double s_deadline = 0;
 
@@ -21,9 +23,7 @@ struct temp_sensor_data {
 struct temp_sensor_data s_tsd[2];
 double s_last_eval, s_last_action_ts;
 
-static const char *onoff(bool on) {
-  return (on ? "on" : "off");
-}
+static const char *onoff(bool on) { return (on ? "on" : "off"); }
 
 static bool check_thresh(int si, bool heater_is_on, struct temp_sensor_data sd,
                          double s_min, double s_max) {
@@ -51,8 +51,10 @@ static bool check_thresh(int si, bool heater_is_on, struct temp_sensor_data sd,
 static void hub_heater_eval(void) {
   bool want_on = false;
   double now = cs_time();
-  if (s_deadline != 0) return;  // Heater is under manual control.
-  if (now - s_last_eval < 60) return;
+  if (s_deadline != 0)
+    return; // Heater is under manual control.
+  if (now - s_last_eval < 60)
+    return;
   want_on |= check_thresh(0, s_heater_on, s_tsd[0],
                           mgos_sys_config_get_hub_heater_s0_min(),
                           mgos_sys_config_get_hub_heater_s0_max());
@@ -63,7 +65,8 @@ static void hub_heater_eval(void) {
     LOG(LL_INFO, ("Heater %s -> %s", onoff(s_heater_on), onoff(want_on)));
     s_heater_on = want_on;
     s_last_action_ts = now;
-    report_to_server(CTL_SID, HEATER_SUBID, now, s_heater_on);
+    report_to_server(mgos_sys_config_get_hub_ctl_sid(), HEATER_SUBID, now,
+                     s_heater_on);
   }
   s_last_eval = now;
 }
@@ -80,13 +83,15 @@ static void heater_timer_cb(void *arg) {
   }
   hub_heater_eval();
   mgos_gpio_write(hcfg->relay_gpio, s_heater_on);
-  (void) arg;
+  (void)arg;
 }
 
 bool hub_heater_get_status(bool *heater_on, double *last_action_ts) {
-  if (heater_on != NULL) *heater_on = s_heater_on;
-  if (last_action_ts != NULL) *last_action_ts = s_last_action_ts;
-  return true;
+  if (heater_on != NULL)
+    *heater_on = s_heater_on;
+  if (last_action_ts != NULL)
+    *last_action_ts = s_last_action_ts;
+  return s_enabled;
 }
 
 static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
@@ -96,13 +101,13 @@ static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
   int duration = -1;
   double now = cs_time();
   if (s_deadline >= now) {
-    duration = (int) (s_deadline - now);
+    duration = (int)(s_deadline - now);
   }
   mg_rpc_send_responsef(ri, "{heater_on: %B, duration: %d}", s_heater_on,
                         duration);
-  (void) args;
-  (void) cb_arg;
-  (void) fi;
+  (void)args;
+  (void)cb_arg;
+  (void)fi;
 }
 
 static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
@@ -118,7 +123,8 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   }
 
   if (duration > 0) {
-    if (duration < 30) duration = 30;
+    if (duration < 30)
+      duration = 30;
   } else {
     duration = 12 * 3600;
   }
@@ -137,8 +143,8 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
                         s_deadline);
 
 out:
-  (void) cb_arg;
-  (void) fi;
+  (void)cb_arg;
+  (void)fi;
 }
 
 static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
@@ -156,7 +162,8 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
     LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf", sid, ts, temp));
   }
 
-  if (sid < 0 || temp == -1000) goto out;
+  if (sid < 0 || temp == -1000)
+    goto out;
 
   if (sid == 0 && ts > s_tsd[0].ts) {
     s_tsd[0].ts = ts;
@@ -167,12 +174,28 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
   }
 
   report_to_server(sid, 0, ts, temp);
-  if (rh > 0) report_to_server(sid, 1, ts, rh);
+  if (rh > 0)
+    report_to_server(sid, 1, ts, rh);
 
 out:
   mg_rpc_send_responsef(ri, NULL);
-  (void) cb_arg;
-  (void) fi;
+  (void)cb_arg;
+  (void)fi;
+}
+
+static void heater_crontab_cb(struct mg_str action, struct mg_str payload,
+                              void *userdata) {
+  bool heater_on = (bool)(intptr_t)userdata;
+
+  LOG(LL_INFO, ("Heater %s by cron", onoff(heater_on)));
+
+  double now = cs_time();
+  s_deadline = now + 12 * 3600; // XXX: For now
+  s_last_action_ts = now;
+  s_heater_on = heater_on;
+
+  (void)payload;
+  (void)action;
 }
 
 bool hub_heater_init(void) {
@@ -196,7 +219,11 @@ bool hub_heater_init(void) {
   mg_rpc_add_handler(c, "Sensor.ReportTemp",
                      "{sid: %d, ts: %lf, temp: %lf, rh: %lf}",
                      sensor_report_temp_handler, NULL);
-
+  mgos_crontab_register_handler(mg_mk_str("heater_on"), heater_crontab_cb,
+                                (void *)1);
+  mgos_crontab_register_handler(mg_mk_str("heater_off"), heater_crontab_cb,
+                                (void *)0);
+  s_enabled = true;
   res = true;
 
 out:
