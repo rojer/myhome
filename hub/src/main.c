@@ -12,7 +12,9 @@
 
 static int s_sl_gpio = -1;
 
-static void blink_off(void *arg) { mgos_gpio_write((int)arg, 0); }
+static void blink_off(void *arg) {
+  mgos_gpio_write((int) arg, 0);
+}
 
 static void status_timer_cb(void *arg) {
   double now = mg_time();
@@ -20,7 +22,7 @@ static void status_timer_cb(void *arg) {
   int sys_sid = mgos_sys_config_get_hub_sys_sid();
   if (s_sl_gpio >= 0) {
     mgos_gpio_write(s_sl_gpio, 1);
-    mgos_set_timer(100, 0, blink_off, (void *)s_sl_gpio);
+    mgos_set_timer(100, 0, blink_off, (void *) s_sl_gpio);
   }
   bool sensor_ok, lights_on;
   if (hub_light_get_status(&sensor_ok, &lights_on)) {
@@ -38,7 +40,7 @@ static void status_timer_cb(void *arg) {
   }
   report_to_server(sys_sid, UPTIME_SUBID, now, mgos_uptime());
   report_to_server(sys_sid, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
-  (void)arg;
+  (void) arg;
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
