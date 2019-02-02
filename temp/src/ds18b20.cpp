@@ -40,8 +40,8 @@ void ds18b20_read(float *temp, float *rh) {
     t = s_dt->getTempC(addr);
     if (t > -100) break;
   }
-  LOG(LL_INFO, ("%02x%02x%02x%02x%02x%02x%02x%02x %d: %f", addr[0], addr[1],
-                addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], i, t));
+  LOG(LL_DEBUG, ("%02x%02x%02x%02x%02x%02x%02x%02x %d: %f", addr[0], addr[1],
+                 addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], i, t));
   if (t > -100) {
     *temp = t;
   }
