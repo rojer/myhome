@@ -1,11 +1,11 @@
 author: mongoose-os
 platform: esp8266
-description: Dallas Temperature sensor usage example (C/C++)
-version: 2.0.1
+description: Temperature sensor firmware
+version: 2.1.0
 
-libs_version: 2.11.0
-modules_version: 2.11.0
-mongoose_os_version: 2.11.0
+libs_version: 2.12.1
+modules_version: 2.12.1
+mongoose_os_version: 2.12.1
 
 sources:
   - src
@@ -35,6 +35,7 @@ config_schema:
   - ["ow_gpio", "i", 13, {title: "OneWire bus GPIO"}]
   - ["sensor_type", "s", "", {title: "Sensor type"}]
   - ["sensor_id", "i", -1, {title: "Sensor ID"}]
+  - ["sensor_name", "s", "", {title: "Sensor Name"}]
   - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
   - ["hub_address", "s", "", {title: "Report temperature to this address"}]
   - ["provision.led.pin", 2]

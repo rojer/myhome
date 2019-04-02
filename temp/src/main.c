@@ -31,18 +31,21 @@ static void read_sensor(void) {
   if (sid < 0 || hub_addr == NULL) return;
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
   double now = mg_time();
+  const char *name = mgos_sys_config_get_sensor_name();
+  if (name == NULL) name = "";
   if (have_temp && have_rh) {
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
-                 NULL, &opts, "{sid: %d, st: %Q, ts: %lf, temp: %lf, rh: %lf}",
-                 sid, s_st, now, temp, rh);
+                 NULL, &opts,
+                 "{sid: %d, st: %Q, name: %Q, ts: %lf, temp: %lf, rh: %lf}",
+                 sid, s_st, name, now, temp, rh);
   } else if (have_temp) {
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
-                 NULL, &opts, "{sid: %d, st: %Q, ts: %lf, temp: %lf}", sid,
-                 s_st, now, temp);
+                 NULL, &opts, "{sid: %d, st: %Q, name: %Q, ts: %lf, temp: %lf}",
+                 sid, s_st, name, now, temp);
   } else if (have_rh) {
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
-                 NULL, &opts, "{sid: %d, st: %Q, ts: %lf, rh: %lf}", sid, s_st,
-                 now, rh);
+                 NULL, &opts, "{sid: %d, st: %Q, name: %Q, ts: %lf, rh: %lf}",
+                 sid, s_st, name, now, rh);
   }
   mgos_gpio_toggle(LED_GPIO);
 }

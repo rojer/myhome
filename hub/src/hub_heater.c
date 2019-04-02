@@ -106,12 +106,13 @@ static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
 static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
                                    struct mg_rpc_frame_info *fi,
                                    struct mg_str args) {
-  int heater_on = -1, duration = -1;
+  bool heater_on = -1;
+  int duration = -1;
 
   json_scanf(args.p, args.len, ri->args_fmt, &heater_on, &duration);
 
   if (heater_on < 0) {
-    mg_rpc_send_errorf(ri, -1, "heater_on is required %d", duration);
+    mg_rpc_send_errorf(ri, -1, "heater_on is required");
     goto out;
   }
 
@@ -146,39 +147,53 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
                                        struct mg_rpc_frame_info *fi,
                                        struct mg_str args) {
   int sid = -1;
+  char *name = NULL;
   double ts = -1, temp = -1000, rh = -1000;
 
-  json_scanf(args.p, args.len, ri->args_fmt, &sid, &ts, &temp, &rh);
+  json_scanf(args.p, args.len, ri->args_fmt, &sid, &name, &ts, &temp, &rh);
 
+  const char *sn = (name != NULL ? name : "");
   if (rh > 0) {
-    LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf, rh: %lf", sid, ts, temp, rh));
+    LOG(LL_INFO, ("sid: %d, name: %s, ts: %lf, temp: %lf, rh: %lf", sid, sn, ts,
+                  temp, rh));
   } else {
-    LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf", sid, ts, temp));
+    LOG(LL_INFO, ("sid: %d, name: %s, ts: %lf, temp: %lf", sid, sn, ts, temp));
   }
 
   if (sid < 0) goto out;
 
   if (temp > -300) {
+    char buf[100] = {0};
+    if (name != NULL) {
+      snprintf(buf, sizeof(buf), "%s Temp", name);
+    }
     struct sensor_data sd0 = {
         .sid = sid,
         .subid = 0,
         .ts = ts,
         .value = temp,
+        .name = (name != NULL ? buf : NULL),
     };
     hub_add_data(&sd0);
   }
   if (rh >= 0) {
+    char buf[100] = {0};
+    if (name != NULL) {
+      snprintf(buf, sizeof(buf), "%s RH", name);
+    }
     struct sensor_data sd0 = {
         .sid = sid,
         .subid = 1,
         .ts = ts,
         .value = rh,
+        .name = (name != NULL ? buf : NULL),
     };
     hub_add_data(&sd0);
   }
 
 out:
   mg_rpc_send_responsef(ri, NULL);
+  free(name);
   (void) cb_arg;
   (void) fi;
 }
@@ -214,10 +229,10 @@ bool hub_heater_init(void) {
   struct mg_rpc *c = mgos_rpc_get_global();
   mg_rpc_add_handler(c, "Hub.Heater.GetStatus", "",
                      hub_heater_get_status_handler, NULL);
-  mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_on: %d, duration: %d}",
+  mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_on: %B, duration: %d}",
                      hub_heater_set_handler, NULL);
   mg_rpc_add_handler(c, "Sensor.ReportTemp",
-                     "{sid: %d, ts: %lf, temp: %lf, rh: %lf}",
+                     "{sid: %d, name: %Q, ts: %lf, temp: %lf, rh: %lf}",
                      sensor_report_temp_handler, NULL);
   mgos_crontab_register_handler(mg_mk_str("heater_on"), heater_crontab_cb,
                                 (void *) 1);

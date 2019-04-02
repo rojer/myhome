@@ -48,9 +48,13 @@ void hub_add_data(const struct sensor_data *sd) {
   } else if (sd->ts <= sde->sd.ts) {
     return;
   }
+  free(sde->sd.name);
+  sde->sd = *sd;
+  if (sd->name != NULL) {
+    sde->sd.name = strdup(sd->name);
+  }
   LOG(LL_INFO, ("New data: %d/%d %.3lf", sd->sid, sd->subid, sd->value));
   report_to_server_sd(sd);
-  sde->sd = *sd;
 }
 
 bool hub_get_data(int sid, int subid, struct sensor_data *sd) {
@@ -90,10 +94,16 @@ static void hub_data_list_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   mbuf_init(&mb, 50);
   struct json_out out = JSON_OUT_MBUF(&mb);
   json_printf(&out, "[");
-  struct sensor_data_entry *sde;
+  const struct sensor_data_entry *sde;
   SLIST_FOREACH(sde, &s_data, next) {
+    const struct sensor_data *sd = &sde->sd;
     if (!first) json_printf(&out, ", ");
-    json_printf(&out, "{sid: %d, subid: %d}", sde->sd.sid, sde->sd.subid);
+    if (sd->name != NULL) {
+      json_printf(&out, "{sid: %d, subid: %d, name: %Q}", sd->sid, sd->subid,
+                  sd->name);
+    } else {
+      json_printf(&out, "{sid: %d, subid: %d}", sd->sid, sd->subid);
+    }
     first = false;
   }
   json_printf(&out, "]");

@@ -18,6 +18,7 @@ struct sensor_data {
   int subid;
   double ts;
   double value;
+  char *name;
 };
 
 void report_to_server(int sid, int subid, double ts, double value);
