@@ -18,9 +18,10 @@ double s_deadline = 0;
 struct temp_sensor_data {
   double ts;
   double temp;
+  double rh;
 };
 
-struct temp_sensor_data s_tsd[2];
+struct temp_sensor_data s_tsd[3];
 double s_last_eval, s_last_action_ts;
 
 static const char *onoff(bool on) {
@@ -107,6 +108,25 @@ static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
   (void) fi;
 }
 
+static void hub_heater_get_temp_handler(struct mg_rpc_request_info *ri,
+                                          void *cb_arg,
+                                          struct mg_rpc_frame_info *fi,
+                                          struct mg_str args) {
+  int sid = -1;
+  json_scanf(args.p, args.len, ri->args_fmt, &sid);
+
+  if (sid < 0 || sid >= (int) ARRAY_SIZE(s_tsd)) {
+    mg_rpc_send_errorf(ri, -1, "invalid sid %d", sid);
+    return;
+  }
+
+  mg_rpc_send_responsef(ri, "{sid: %d, ts: %.3lf, temp: %.3lf, rh: %.3lf}",
+      sid, s_tsd[sid].ts, s_tsd[sid].temp, s_tsd[sid].rh);
+
+  (void) cb_arg;
+  (void) fi;
+}
+
 static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
                                    struct mg_rpc_frame_info *fi,
                                    struct mg_str args) {
@@ -158,14 +178,12 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
     LOG(LL_INFO, ("sid: %d, ts: %lf, temp: %lf", sid, ts, temp));
   }
 
-  if (sid < 0 || temp == -1000) goto out;
+  if (sid < 0 || temp == -1000 || sid >= (int) ARRAY_SIZE(s_tsd)) goto out;
 
-  if (sid == 0 && ts > s_tsd[0].ts) {
-    s_tsd[0].ts = ts;
-    s_tsd[0].temp = temp;
-  } else if (sid == 1 && ts > s_tsd[1].ts) {
-    s_tsd[1].ts = ts;
-    s_tsd[1].temp = temp;
+  if (ts > s_tsd[sid].ts) {
+    s_tsd[sid].ts = ts;
+    s_tsd[sid].temp = temp;
+    s_tsd[sid].rh = rh;
   }
 
   report_to_server(sid, 0, ts, temp);
@@ -213,6 +231,8 @@ bool hub_heater_init(void) {
   mg_rpc_add_handler(c, "Sensor.ReportTemp",
                      "{sid: %d, ts: %lf, temp: %lf, rh: %lf}",
                      sensor_report_temp_handler, NULL);
+  mg_rpc_add_handler(c, "Hub.Heater.GetTemp", "{sid: %d}",
+                     hub_heater_get_temp_handler, NULL);
   mgos_crontab_register_handler(mg_mk_str("heater_on"), heater_crontab_cb,
                                 (void *) 1);
   mgos_crontab_register_handler(mg_mk_str("heater_off"), heater_crontab_cb,
