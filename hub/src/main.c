@@ -46,6 +46,11 @@ static void status_timer_cb(void *arg) {
 enum mgos_app_init_result mgos_app_init(void) {
   enum mgos_app_init_result res = MGOS_APP_INIT_ERROR;
 
+  if (!hub_data_init()) {
+    LOG(LL_ERROR, ("Data module init failed"));
+    goto out;
+  }
+
   if (!hub_light_init()) {
     LOG(LL_ERROR, ("Light module init failed"));
     goto out;
