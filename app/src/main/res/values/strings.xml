@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<resources>
+    <string name="accessibility_temp_minus">Decrease temperature</string>
+    <string name="accessibility_temp_plus">Increase temperature</string>
+
+    <string name="action_history">History</string>
+    <string name="action_schedule">Schedule</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="app_name">My Home</string>
+
+    <string name="desc_heater_status">Heater</string>
+    <string name="desc_rh">Relative humidity</string>
+    <string name="desc_target_temp">Target temperature</string>
+    <string name="desc_welcome_home">Welcome home!</string>
+
+    <string name="nav_drawer_close">Close navigation drawer</string>
+    <string name="nav_drawer_open">Open navigation drawer</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="nav_title_dashboard">Dashboard</string>
+    <string name="nav_title_sensors">Sensors</string>
+
+    <string-array name="prefs_sensor_unit_titles">
+        <item>Celsius (°C)</item>
+        <item>Fahrenheit (°F)</item>
+    </string-array>
+    <string-array name="prefs_sensor_unit_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+    <string name="state_auto">Auto</string>
+    <string name="state_off">Off</string>
+    <string name="state_off_auto">Off (Auto)</string>
+    <string name="state_off_manual">Off (Manual)</string>
+    <string name="state_on">On</string>
+    <string name="state_on_auto">On (Auto)</string>
+    <string name="state_on_manual">On (Manual)</string>
+
+    <string name="ts_hour">Last updated over an hour ago</string>
+    <string name="ts_less_than_minute">Last updated just now</string>
+    <string name="ts_minutes">Last updated %s minutes ago</string>
+    <string name="ts_one_minute">Last updated one minute ago</string>
+
+    <string name="units_celsius">°C</string>
+    <string name="units_fahrenheit">°F</string>
+</resources>

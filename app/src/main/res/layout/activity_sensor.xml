@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.SensorFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary">
+
+        <TextView
+            android:id="@+id/last_updated"
+            style="@style/TextAppearance.MaterialComponents.Body1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="56dp"
+            android:textColor="@android:color/white"
+            app:fontFamily="@font/google_sans"
+            tools:text="Last updated 3 minutes ago" />
+
+        <LinearLayout
+            android:id="@+id/sensor_value_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/last_updated"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="48dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/sensor_value"
+                style="@style/TextAppearance.MaterialComponents.Headline1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans"
+                tools:text="21.1" />
+
+            <TextView
+                android:id="@+id/sensor_units"
+                style="@style/TextAppearance.AppCompat.Large"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginBottom="9dp"
+                android:text="@string/units_celsius"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/sensor_rh_text"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sensor_value_layout"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginStart="32dp"
+            android:layout_marginLeft="32dp"
+            android:layout_marginTop="56dp"
+            android:drawableStart="@drawable/ic_humidity"
+            android:drawableLeft="@drawable/ic_humidity"
+            android:drawablePadding="16dp"
+            android:text="@string/desc_rh"
+            android:textColor="@android:color/white"
+            app:fontFamily="@font/google_sans" />
+
+
+        <TextView
+            android:id="@+id/sensor_rh"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sensor_value_layout"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="56dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginRight="32dp"
+            android:textColor="@android:color/white"
+            app:fontFamily="@font/google_sans"
+            tools:text="67%" />
+
+        <TextView
+            android:id="@+id/sensor_target_text"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sensor_rh_text"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginStart="32dp"
+            android:layout_marginLeft="32dp"
+            android:layout_marginTop="32dp"
+            android:drawableStart="@drawable/ic_thermometer"
+            android:drawableLeft="@drawable/ic_thermometer"
+            android:drawablePadding="16dp"
+            android:text="@string/desc_target_temp"
+            android:textColor="@android:color/white"
+            app:fontFamily="@font/google_sans" />
+
+        <TextView
+            android:id="@+id/sensor_target"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sensor_rh"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="16dp"
+            android:textColor="@android:color/white"
+            app:fontFamily="@font/google_sans"
+            tools:text="21.3°C" />
+
+        <!-- TODO These buttons are placeholders and may or may not have functionality added in future -->
+        <LinearLayout
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.MaterialComponents.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:drawableTop="@drawable/ic_history"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="@string/action_history"
+                android:textAllCaps="true"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                style="@style/TextAppearance.MaterialComponents.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:drawableTop="@drawable/ic_schedule"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="@string/action_schedule"
+                android:textAllCaps="true"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+    </RelativeLayout>
+</android.support.design.widget.CoordinatorLayout>

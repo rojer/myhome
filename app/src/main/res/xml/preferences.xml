@@ -1,0 +1,25 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Connection">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:enabled="false"
+            android:title="Connect using web socket" />
+        <EditTextPreference
+            android:defaultValue="ws://192.168.1.10/rpc"
+            android:enabled="true"
+            android:key="hub_url"
+            android:title="Hub connection URL" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Sensors">
+        <ListPreference
+            android:defaultValue="0"
+            android:enabled="false"
+            android:entries="@array/prefs_sensor_unit_titles"
+            android:entryValues="@array/prefs_sensor_unit_values"
+            android:key="value_units"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:summary="%s"
+            android:title="Sensor units" />
+    </PreferenceCategory>
+</PreferenceScreen>
