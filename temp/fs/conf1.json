@@ -1,0 +1,12 @@
+{
+  "wifi": {
+    "ap": { "enable": false },
+    "sta": {
+      "enable": true,
+      "ssid": "Over_9000_Internets",
+      "pass": "Over_9000_Internets"
+    }
+  },
+  "hub_address": "ws://192.168.11.5/rpc",
+  "interval": 60
+}

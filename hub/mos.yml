@@ -1,0 +1,67 @@
+name: hub
+arch: esp8266
+version: 1.11.0
+
+#libs_version: 2.11.0
+#modules_version: 2.11.0
+#mongoose_os_version: 2.11.0
+
+sources:
+  - src
+filesystem:
+  - fs
+
+config_schema:
+  - ["i2c.enable", true]
+  - ["i2c.sda_gpio", 4]
+  - ["i2c.scl_gpio", 5]
+  - ["hub", "o", {"title": "Hub app settings"}]
+  - ["hub.light", "o", {"title": "Outdoor lighting settings"}]
+  - ["hub.light.enable", "b", false, {"title": "Enable lighting control"}]
+  - ["hub.light.thr_lo", "i", 10, {"title": "Threshold for on -> off"}]
+  - ["hub.light.thr_hi", "i", 15, {"title": "Threshold for off -> on"}]
+  - ["hub.light.relay_gpio", "i", 14, {"title": "Relay GPIO"}]
+  - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
+  - ["hub.heater", "o", {"title": "Heater settings"}]
+  - ["hub.heater.enable", "b", false, {"title": "Enable heater control"}]
+  - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
+  - ["hub.heater.limits", "o", {"title": "Limits"}]
+  - ["hub.heater.limits.sid", "i", -1, {"title": "Sensor ID"}]
+  - ["hub.heater.limits.subid", "i", 0, {"title": "Sensor sub-ID"}]
+  - ["hub.heater.limits.enable", "b", false, {"title": "Enable this entry"}]
+  - ["hub.heater.limits.min", "d", 0.0, {"title": "Min threshold"}]
+  - ["hub.heater.limits.max", "d", 0.0, {"title": "Max threshold"}]
+  - ["hub.heater.limits1", "hub.heater.limits", {"title": "Limits 1"}]
+  - ["hub.heater.limits2", "hub.heater.limits", {"title": "Limits 2"}]
+  - ["hub.heater.limits3", "hub.heater.limits", {"title": "Limits 3"}]
+  - ["hub.heater.limits4", "hub.heater.limits", {"title": "Limits 4"}]
+  - ["hub.heater.limits5", "hub.heater.limits", {"title": "Limits 5"}]
+  - ["hub.heater.limits6", "hub.heater.limits", {"title": "Limits 6"}]
+  - ["hub.heater.limits7", "hub.heater.limits", {"title": "Limits 7"}]
+  - ["hub.heater.limits8", "hub.heater.limits", {"title": "Limits 8"}]
+  - ["hub.heater.limits9", "hub.heater.limits", {"title": "Limits 9"}]
+  - ["hub.heater.s1.max", "d", 60.0, {"title": "Temperature threshold for sensor 1"}]
+  - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
+  - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
+  - ["hub.data_server_addr", "s", "wss://rojer.me/ss/rpc", {"title": "RPC address of the data server (if enabled)"}]
+  - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-server id"}]
+  - ["hub.sys_sid", "i", 200, {"title": "Control values pseudo-server id"}]
+
+libs:
+  - origin: https://github.com/mongoose-os-libs/cron
+  - origin: https://github.com/mongoose-os-libs/crontab
+  - origin: https://github.com/mongoose-os-libs/http-server
+  - origin: https://github.com/mongoose-os-libs/i2c
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-cron
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
+  - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+manifest_version: 2017-06-29
