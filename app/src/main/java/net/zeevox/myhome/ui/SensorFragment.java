@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import net.zeevox.myhome.R;
@@ -42,7 +43,9 @@ public class SensorFragment extends Fragment {
         assert sensor != null;
         double currentTemp = sensor.getValue(Sensor.TEMP_SUBID, 0.0);
         double relativeHumidity = sensor.getValue(Sensor.RH_SUBID, -1000.0);
-        final double[] targetTemp = {sensor.getValue(2, -1000.0)};
+        final double[] tempTargets = sensor.getTargets();
+        final double hysteresis = tempTargets[1] - tempTargets[0];
+        boolean targetEnabled = sensor.isTargetEnabled();
         double timestamp = sensor.getTimestamp();
 
         TextView tempUnitsTextView = view.findViewById(R.id.sensor_units);
@@ -62,45 +65,57 @@ public class SensorFragment extends Fragment {
             view.findViewById(R.id.sensor_rh_layout).setOnClickListener(v -> startGraphFragment(sensor.getSID(), Sensor.RH_SUBID));
         }
 
-        if (targetTemp[0] == -1000) {
+        if (tempTargets[0] == 0 && tempTargets[1] == 0) {
             view.findViewById(R.id.sensor_target_layout).setVisibility(View.GONE);
+            view.findViewById(R.id.target_control_layout).setVisibility(View.GONE);
         } else {
+            Switch targetEnabledSwitch = view.findViewById(R.id.target_control);
+
+            targetEnabledSwitch.setChecked(targetEnabled);
+            view.findViewById(R.id.sensor_target_layout).setVisibility(targetEnabled ? View.VISIBLE : View.GONE);
+
+            targetEnabledSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                view.findViewById(R.id.sensor_target_layout).setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                sensor.setTargetEnabled(isChecked);
+            });
+            view.findViewById(R.id.target_control_layout).setOnClickListener(v -> targetEnabledSwitch.setChecked(!targetEnabledSwitch.isChecked()));
+
             ((TextView) view.findViewById(R.id.sensor_target)).setText(
-                    String.format("%s %s", String.valueOf(oneDecimalExact.format(targetTemp[0])), getString(R.string.units_celsius)));
+                    String.format("%s %s", String.valueOf(oneDecimalExact.format(tempTargets[1])), getString(R.string.units_celsius)));
+
             view.findViewById(R.id.sensor_target_layout).setOnClickListener(v -> {
                 assert getActivity() != null;
                 Dialog dialog = new Dialog(getActivity());
                 dialog.setContentView(R.layout.dialog_number_pick);
 
                 TextView dialogValue = dialog.findViewById(R.id.dialog_number_pick_value);
-                dialogValue.setText(oneDecimalExact.format(targetTemp[0]));
+                dialogValue.setText(oneDecimalExact.format(tempTargets[1]));
 
                 ImageView addButton = dialog.findViewById(R.id.dialog_button_plus);
                 addButton.setOnClickListener(v12 -> {
-                    targetTemp[0] += 0.1;
-                    dialogValue.setText(oneDecimalExact.format(targetTemp[0]));
+                    tempTargets[1] += 0.1;
+                    dialogValue.setText(oneDecimalExact.format(tempTargets[1]));
                 });
                 addButton.setOnLongClickListener(v14 -> {
-                    targetTemp[0] += 1.0;
-                    dialogValue.setText(oneDecimalExact.format(targetTemp[0]));
+                    tempTargets[1] += 1.0;
+                    dialogValue.setText(oneDecimalExact.format(tempTargets[1]));
                     return true;
                 });
                 ImageView minusButton = dialog.findViewById(R.id.dialog_button_minus);
                 minusButton.setOnClickListener(v13 -> {
-                    targetTemp[0] -= 0.1;
-                    dialogValue.setText(oneDecimalExact.format(targetTemp[0]));
+                    tempTargets[1] -= 0.1;
+                    dialogValue.setText(oneDecimalExact.format(tempTargets[1]));
                 });
                 minusButton.setOnLongClickListener(v14 -> {
-                    targetTemp[0] -= 1.0;
-                    dialogValue.setText(oneDecimalExact.format(targetTemp[0]));
+                    tempTargets[1] -= 1.0;
+                    dialogValue.setText(oneDecimalExact.format(tempTargets[1]));
                     return true;
                 });
 
                 Button positiveButton = dialog.findViewById(R.id.dialog_button_ok);
                 positiveButton.setOnClickListener(v1 -> {
-                    ((TextView) view.findViewById(R.id.sensor_target)).setText(String.format("%s %s", oneDecimalExact.format(targetTemp[0]), getString(R.string.units_celsius)));
-                    // TODO The value ought to be sent to the Hub and thus set the target temperature
-                    // This is not yet possible as the implementation on the side of the Hub is not ready
+                    ((TextView) view.findViewById(R.id.sensor_target)).setText(String.format("%s %s", oneDecimalExact.format(tempTargets[1]), getString(R.string.units_celsius)));
+                    sensor.setTargets(new double[]{tempTargets[1] - hysteresis, tempTargets[1]});
                     dialog.dismiss();
                 });
                 dialog.show();

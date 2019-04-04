@@ -1,6 +1,10 @@
 package net.zeevox.myhome;
 
+import net.zeevox.myhome.ui.MainActivity;
+
 import java.util.HashMap;
+
+import okhttp3.WebSocket;
 
 public class Sensor {
     public static final String SID = "sid";
@@ -9,12 +13,19 @@ public class Sensor {
     public static final String SUBID = "subid";
     public static final String RESULT = "result";
     public static final String NAME = "name";
+    public static final String TARGET_ENABLE = "enable";
+    public static final String TARGET_MIN = "min";
+    public static final String TARGET_MAX = "max";
     public static final int TEMP_SUBID = 0;
     public static final int RH_SUBID = 1;
     private int sensorSID;
     private HashMap<Integer, Double> values = new HashMap<>();
     private double timestamp;
     private String name;
+    private boolean targetEnabled;
+    private int targetSubID;
+    private double targetMin = 0;
+    private double targetMax = 0;
 
     public Sensor(int SID, HashMap<Integer, Double> values, double timestamp) {
         this.sensorSID = SID;
@@ -76,5 +87,36 @@ public class Sensor {
 
     public void addSubID(Integer subID) {
         values.put(subID, 0.0);
+    }
+
+    public void setTarget(boolean enabled, int subid, double min, double max) {
+        targetEnabled = enabled;
+        targetSubID = subid;
+        targetMin = min;
+        targetMax = max;
+    }
+
+    public boolean isTargetEnabled() {
+        return targetEnabled;
+    }
+
+    public void setTargetEnabled(boolean enabled) {
+        targetEnabled = enabled;
+        onHeaterChanged(MainActivity.webSocketUtils.getWebSocket());
+    }
+
+    public void setTargets(double[] targets) {
+        targetMin = targets[0];
+        targetMax = targets[1];
+        onHeaterChanged(MainActivity.webSocketUtils.getWebSocket());
+    }
+
+    public double[] getTargets() {
+        return new double[]{targetMin, targetMax};
+    }
+
+    private void onHeaterChanged(WebSocket webSocket) {
+        webSocket.send("{\"method\": \"Hub.Heater.SetLimits\", \"id\": 639, \"params\": {\"sid\": "
+                + sensorSID + ", \"subid\": " + targetSubID + ", \"min\": " + targetMin + ", \"max\": " + targetMax + ", \"enable\": " + targetEnabled + "}}");
     }
 }

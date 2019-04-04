@@ -11,6 +11,7 @@
 
     <string name="desc_heater_status">Heater</string>
     <string name="desc_rh">Relative humidity</string>
+    <string name="desc_target_control">Enable control</string>
     <string name="desc_target_temp">Target temperature</string>
     <string name="desc_welcome_home">Welcome home!</string>
 

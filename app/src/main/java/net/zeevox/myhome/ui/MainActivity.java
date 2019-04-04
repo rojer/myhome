@@ -172,6 +172,22 @@ public class MainActivity extends AppCompatActivity
                         sensor.setTimestamp((Double) resultSensor.get(Sensor.TIMESTAMP));
                         sensor.newValue(toInt(resultSensor.get(Sensor.SUBID)), (Double) resultSensor.get(Sensor.VALUE));
                         break;
+                    case 638:
+                        ArrayList<Map> mapArrayList = (ArrayList<Map>) data.get(Sensor.RESULT);
+                        Map resultSHL;
+                        try {
+                            resultSHL = mapArrayList.get(0);
+                        } catch (IndexOutOfBoundsException e) {
+                            break;
+                        }
+                        assert resultSHL != null;
+                        Sensor sensor1 = sensors.getBySID(toInt(resultSHL.get(Sensor.SID)));
+                        sensor1.setTarget(
+                                (boolean) resultSHL.get(Sensor.TARGET_ENABLE),
+                                toInt(resultSHL.get(Sensor.SUBID)),
+                                (Double) resultSHL.get(Sensor.TARGET_MIN),
+                                (Double) resultSHL.get(Sensor.TARGET_MAX));
+                        break;
                     case 8347:
                         Map resultHeater = (Map) data.get(Sensor.RESULT);
                         assert resultHeater != null;
@@ -223,6 +239,8 @@ public class MainActivity extends AppCompatActivity
                 for (Integer SubID : sensor.getValues().keySet()) {
                     Log.d("WebSocket", "Requesting data from sensor " + sensor.getSID() + " #" + SubID);
                     webSocket.send("{\"method\": \"Hub.Data.Get\", \"id\": 637, \"params\": {\"sid\": "
+                            + sensor.getSID() + ", \"subid\": " + SubID + "}}");
+                    webSocket.send("{\"method\": \"Hub.Heater.GetLimits\", \"id\": 638, \"params\": {\"sid\": "
                             + sensor.getSID() + ", \"subid\": " + SubID + "}}");
                 }
             }

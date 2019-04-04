@@ -112,10 +112,58 @@
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/sensor_target_layout"
+            android:id="@+id/target_control_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/sensor_rh_layout"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingStart="16dp"
+            android:paddingLeft="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/target_control_text"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toStartOf="@id/target_control"
+                android:layout_toLeftOf="@id/target_control"
+                android:drawableStart="@drawable/ic_thermostat"
+                android:drawableLeft="@drawable/ic_thermostat"
+                android:drawablePadding="16dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="@string/desc_target_control"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans" />
+
+            <Switch
+                android:id="@+id/target_control"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/sensor_target_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/target_control_layout"
             android:layout_marginStart="16dp"
             android:layout_marginLeft="16dp"
             android:layout_marginEnd="16dp"
