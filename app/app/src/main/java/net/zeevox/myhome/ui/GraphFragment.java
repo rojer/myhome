@@ -174,6 +174,7 @@ public class GraphFragment extends Fragment {
     }
 
     private void fetchData() {
+        extremes = null;
         long timeFrom = launchSecond - 86400 * (daysBack + 1);
         long timeTo = launchSecond - 86400 * daysBack;
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
