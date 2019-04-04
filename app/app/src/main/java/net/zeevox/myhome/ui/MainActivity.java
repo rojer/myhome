@@ -54,6 +54,11 @@ public class MainActivity extends AppCompatActivity
     private SharedPreferences preferences;
     private SwipeRefreshLayout swipeRefreshLayout;
 
+    public static int toInt(Object o) {
+        Double d = (Double) o;
+        return (int) Math.round(d);
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -314,10 +319,5 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    public static int toInt(Object o) {
-        Double d = (Double) o;
-        return (int) Math.round(d);
     }
 }
