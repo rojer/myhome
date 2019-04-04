@@ -9,6 +9,8 @@ public class Sensor {
     public static final String SUBID = "subid";
     public static final String RESULT = "result";
     public static final String NAME = "name";
+    public static final int TEMP_SUBID = 0;
+    public static final int RH_SUBID = 1;
     private int sensorSID;
     private HashMap<Integer, Double> values = new HashMap<>();
     private double timestamp;

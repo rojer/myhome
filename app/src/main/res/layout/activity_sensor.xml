@@ -28,8 +28,12 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/last_updated"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="48dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="32dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="horizontal"
+            android:padding="16dp">
 
             <TextView
                 android:id="@+id/sensor_value"
@@ -55,86 +59,117 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/sensor_rh_text"
-            style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/sensor_rh_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/sensor_value_layout"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentLeft="true"
-            android:layout_marginStart="32dp"
-            android:layout_marginLeft="32dp"
-            android:layout_marginTop="56dp"
-            android:drawableStart="@drawable/ic_humidity"
-            android:drawableLeft="@drawable/ic_humidity"
-            android:drawablePadding="16dp"
-            android:text="@string/desc_rh"
-            android:textColor="@android:color/white"
-            app:fontFamily="@font/google_sans" />
-
-
-        <TextView
-            android:id="@+id/sensor_rh"
-            style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sensor_value_layout"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginTop="56dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginRight="32dp"
-            android:textColor="@android:color/white"
-            app:fontFamily="@font/google_sans"
-            tools:text="67%" />
-
-        <TextView
-            android:id="@+id/sensor_target_text"
-            style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sensor_rh_text"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentLeft="true"
-            android:layout_marginStart="32dp"
-            android:layout_marginLeft="32dp"
-            android:layout_marginTop="32dp"
-            android:drawableStart="@drawable/ic_thermometer"
-            android:drawableLeft="@drawable/ic_thermometer"
-            android:drawablePadding="16dp"
-            android:text="@string/desc_target_temp"
-            android:textColor="@android:color/white"
-            app:fontFamily="@font/google_sans" />
-
-        <TextView
-            android:id="@+id/sensor_target"
-            style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sensor_rh"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
-            android:padding="16dp"
-            android:textColor="@android:color/white"
-            app:fontFamily="@font/google_sans"
-            tools:text="21.3°C" />
+            android:paddingStart="16dp"
+            android:paddingLeft="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/sensor_rh_text"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toStartOf="@id/sensor_rh"
+                android:layout_toLeftOf="@id/sensor_rh"
+                android:drawableStart="@drawable/ic_humidity"
+                android:drawableLeft="@drawable/ic_humidity"
+                android:drawablePadding="16dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="@string/desc_rh"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans" />
+
+
+            <TextView
+                android:id="@+id/sensor_rh"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans"
+                tools:text="67%" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/sensor_target_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sensor_rh_layout"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingStart="16dp"
+            android:paddingLeft="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/sensor_target_text"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toStartOf="@id/sensor_target"
+                android:layout_toLeftOf="@id/sensor_target"
+                android:drawableStart="@drawable/ic_thermometer"
+                android:drawableLeft="@drawable/ic_thermometer"
+                android:drawablePadding="16dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="@string/desc_target_temp"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans" />
+
+            <TextView
+                android:id="@+id/sensor_target"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:textColor="@android:color/white"
+                app:fontFamily="@font/google_sans"
+                tools:text="21.3°C" />
+
+        </RelativeLayout>
 
         <!-- TODO These buttons are placeholders and may or may not have functionality added in future -->
         <LinearLayout
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_margin="16dp"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <TextView
                 style="@style/TextAppearance.MaterialComponents.Body1"

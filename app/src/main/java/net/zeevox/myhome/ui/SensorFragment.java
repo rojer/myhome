@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,13 +17,13 @@ import net.zeevox.myhome.R;
 import net.zeevox.myhome.Sensor;
 
 import java.text.DecimalFormat;
+import java.util.Objects;
 
 public class SensorFragment extends Fragment {
 
-    public final static String SID = "sid";
-
     private final DecimalFormat oneDecimal = new DecimalFormat("#.#");
     private final DecimalFormat oneDecimalExact = new DecimalFormat("0.0");
+    private final String TAG = getClass().getSimpleName();
 
     @Nullable
     @Override
@@ -36,11 +37,11 @@ public class SensorFragment extends Fragment {
 
         assert getArguments() != null;
 
-        Sensor sensor = MainActivity.sensors.getBySID(getArguments().getInt(SID));
+        Sensor sensor = MainActivity.sensors.getBySID(getArguments().getInt(Sensor.SID));
 
         assert sensor != null;
-        double currentTemp = sensor.getValue(0, 0.0);
-        double relativeHumidity = sensor.getValue(1, -1000.0);
+        double currentTemp = sensor.getValue(Sensor.TEMP_SUBID, 0.0);
+        double relativeHumidity = sensor.getValue(Sensor.RH_SUBID, -1000.0);
         final double[] targetTemp = {sensor.getValue(2, -1000.0)};
         double timestamp = sensor.getTimestamp();
 
@@ -50,23 +51,24 @@ public class SensorFragment extends Fragment {
         TextView currentTempValue = view.findViewById(R.id.sensor_value);
         if (!(currentTemp == -1000)) {
             currentTempValue.setText(String.valueOf(oneDecimal.format(currentTemp)));
+            view.findViewById(R.id.sensor_value_layout).setOnClickListener(v -> startGraphFragment(sensor.getSID(), Sensor.TEMP_SUBID));
         }
 
         if (relativeHumidity == -1000) {
-            view.findViewById(R.id.sensor_rh_text).setVisibility(View.GONE);
-            view.findViewById(R.id.sensor_rh).setVisibility(View.GONE);
+            view.findViewById(R.id.sensor_rh_layout).setVisibility(View.GONE);
         } else {
             ((TextView) view.findViewById(R.id.sensor_rh)).setText(
                     String.format("%s%%", String.valueOf(oneDecimal.format(relativeHumidity))));
+            view.findViewById(R.id.sensor_rh_layout).setOnClickListener(v -> startGraphFragment(sensor.getSID(), Sensor.RH_SUBID));
         }
 
         if (targetTemp[0] == -1000) {
-            view.findViewById(R.id.sensor_target_text).setVisibility(View.GONE);
-            view.findViewById(R.id.sensor_target).setVisibility(View.GONE);
+            view.findViewById(R.id.sensor_target_layout).setVisibility(View.GONE);
         } else {
             ((TextView) view.findViewById(R.id.sensor_target)).setText(
                     String.format("%s %s", String.valueOf(oneDecimalExact.format(targetTemp[0])), getString(R.string.units_celsius)));
-            view.findViewById(R.id.sensor_target).setOnClickListener(v -> {
+            view.findViewById(R.id.sensor_target_layout).setOnClickListener(v -> {
+                assert getActivity() != null;
                 Dialog dialog = new Dialog(getActivity());
                 dialog.setContentView(R.layout.dialog_number_pick);
 
@@ -120,6 +122,25 @@ public class SensorFragment extends Fragment {
                 status = String.format(getString(R.string.ts_minutes), String.valueOf(((Double) Math.floor(diff / 1000 / 60)).intValue()));
             }
             ((TextView) view.findViewById(R.id.last_updated)).setText(status);
+        }
+    }
+
+    private void startGraphFragment(int sid, int subid) {
+        try {
+            Fragment fragment = GraphFragment.class.newInstance();
+            Bundle bundle = new Bundle();
+            bundle.putInt(Sensor.SID, sid);
+            bundle.putInt(Sensor.SUBID, subid);
+            fragment.setArguments(bundle);
+            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity()).getSupportFragmentManager().beginTransaction();
+            fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
+            fragmentTransaction.replace(R.id.frame_layout, fragment, TAG)
+                    .addToBackStack(TAG)
+                    .commit();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (java.lang.InstantiationException e) {
+            e.printStackTrace();
         }
     }
 }
