@@ -316,7 +316,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private int toInt(Object o) {
+    public static int toInt(Object o) {
         Double d = (Double) o;
         return (int) Math.round(d);
     }

@@ -9,6 +9,11 @@
             android:enabled="true"
             android:key="hub_url"
             android:title="Hub connection URL" />
+        <EditTextPreference
+            android:defaultValue="wss://rojer.me/ss/rpc"
+            android:enabled="true"
+            android:key="data_url"
+            android:title="Historical data URL" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Sensors">
         <ListPreference
@@ -21,5 +26,12 @@
             android:positiveButtonText="@null"
             android:summary="%s"
             android:title="Sensor units" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Graphing">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:enabled="true"
+            android:title="Show minimum and maximum"
+            android:key="show_extremes" />
     </PreferenceCategory>
 </PreferenceScreen>

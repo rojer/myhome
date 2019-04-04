@@ -15,6 +15,10 @@
     <string name="desc_target_temp">Target temperature</string>
     <string name="desc_welcome_home">Welcome home!</string>
 
+    <string name="graph_yesterday">Yesterday</string>
+    <string name="graph_days_ago">%d days ago</string>
+    <string name="graph_today">Today</string>
+
     <string name="nav_drawer_close">Close navigation drawer</string>
     <string name="nav_drawer_open">Open navigation drawer</string>
     <string name="nav_header_desc">Navigation header</string>

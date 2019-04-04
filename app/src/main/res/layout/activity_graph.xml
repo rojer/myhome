@@ -1,12 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/date_pick_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:id="@+id/graph_chevron_left"
+            android:focusable="true"
+            android:padding="8dp"
+            app:srcCompat="@drawable/ic_chevron_left" />
+
+        <TextView
+            android:id="@+id/graph_date"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:text="@string/graph_today" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/graph_chevron_right"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            app:srcCompat="@drawable/ic_chevron_right" />
+
+    </LinearLayout>
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/chart"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="16dp" />
+        android:layout_above="@id/graph_extremes_info"
+        android:layout_below="@id/date_pick_layout"
+        android:layout_marginTop="16dp" />
+
+
+    <TextView
+        android:id="@+id/graph_extremes_info"
+        android:layout_width="match_parent"
+        android:layout_above="@id/graph_point_info"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_horizontal"
+        style="@style/TextAppearance.MaterialComponents.Chip"
+        tools:text="Min: 4.32 | Max: 15.96" />
+
+    <TextView
+        android:id="@+id/graph_point_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="8dp"
+        android:gravity="center_horizontal"
+        style="@style/TextAppearance.MaterialComponents.Chip"
+        tools:text="Thu 4 Apr 2019 at 07:25:23 | 5.95" />
 
 </RelativeLayout>

@@ -12,7 +12,9 @@ import net.zeevox.myhome.R;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
+    public static final String DATA_URL = "data_url";
     public static final String HUB_URL = "hub_url";
+    public static final String SHOW_EXTREMES = "show_extremes";
     public static final String VALUE_UNITS = "value_units";
 
     @Override
@@ -34,6 +36,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         EditTextPreference HubUriPreference = (EditTextPreference) findPreference(HUB_URL);
         HubUriPreference.setSummary(HubUriPreference.getText());
         HubUriPreference.setOnPreferenceChangeListener((preference, newValue) -> {
+            preference.setSummary((String) newValue);
+            return true;
+        });
+
+        EditTextPreference DataUrlPreference = (EditTextPreference) findPreference(DATA_URL);
+        DataUrlPreference.setSummary(DataUrlPreference.getText());
+        DataUrlPreference.setOnPreferenceChangeListener((preference, newValue) -> {
             preference.setSummary((String) newValue);
             return true;
         });
