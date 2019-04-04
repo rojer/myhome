@@ -3,6 +3,7 @@
 #include "common/cs_dbg.h"
 #include "common/cs_time.h"
 
+#include "mgos.h"
 #include "mgos_crontab.h"
 #include "mgos_gpio.h"
 #include "mgos_rpc.h"
@@ -10,6 +11,8 @@
 #include "mgos_timers.h"
 
 #include "hub.h"
+
+#define NUM_LIMITS 10
 
 static bool s_enabled = false;
 bool s_heater_on = false;
@@ -21,26 +24,53 @@ static const char *onoff(bool on) {
   return (on ? "on" : "off");
 }
 
-static bool check_thresh(int sid, int subid, bool heater_is_on, double s_min,
-                         double s_max) {
+static const struct mgos_config_hub_heater_limits *get_limits(int idx) {
+  switch (idx) {
+    case 0:
+      return mgos_sys_config_get_hub_heater_limits();
+    case 1:
+      return mgos_sys_config_get_hub_heater_limits1();
+    case 2:
+      return mgos_sys_config_get_hub_heater_limits2();
+    case 3:
+      return mgos_sys_config_get_hub_heater_limits3();
+    case 4:
+      return mgos_sys_config_get_hub_heater_limits4();
+    case 5:
+      return mgos_sys_config_get_hub_heater_limits5();
+    case 6:
+      return mgos_sys_config_get_hub_heater_limits6();
+    case 7:
+      return mgos_sys_config_get_hub_heater_limits7();
+    case 8:
+      return mgos_sys_config_get_hub_heater_limits8();
+    case 9:
+      return mgos_sys_config_get_hub_heater_limits9();
+  }
+  return NULL;
+}
+
+static bool check_thresh(bool heater_is_on,
+                         const struct mgos_config_hub_heater_limits *ls) {
   bool want_on = false;
   struct sensor_data sd;
-  if (s_min < 0 || s_max < 0) {
+  if (ls == NULL || !ls->enable) {
     want_on = false;
-  } else if (!hub_get_data(sid, subid, &sd)) {
-    LOG(LL_INFO, ("S%d/%d: no data yet", sid, subid));
+  } else if (!hub_get_data(ls->sid, ls->subid, &sd)) {
+    LOG(LL_INFO, ("S%d/%d: no data yet", ls->sid, ls->subid));
     want_on = false;
   } else if (cs_time() - sd.ts > 300) {
     LOG(LL_INFO, ("S%d/%d: data is stale", sd.sid, sd.subid));
     want_on = false;
-  } else if (!heater_is_on && sd.value < s_min) {
-    LOG(LL_INFO, ("S%d/%d: %.3lf < %.3lf", sd.sid, sd.subid, sd.value, s_min));
+  } else if (!heater_is_on && sd.value < ls->min) {
+    LOG(LL_INFO,
+        ("S%d/%d: %.3lf < %.3lf", sd.sid, sd.subid, sd.value, ls->min));
     want_on = true;
-  } else if (heater_is_on && sd.value < s_max) {
+  } else if (heater_is_on && sd.value < ls->max) {
     want_on = true;
   } else {
     LOG(LL_INFO, ("S%d/%d: Ok (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
-                  sd.value, s_min, s_max));
+                  sd.value, ls->min, ls->max));
     want_on = false;
   }
   return want_on;
@@ -51,12 +81,9 @@ static void hub_heater_eval(void) {
   double now = cs_time();
   if (s_deadline != 0) return;  // Heater is under manual control.
   if (now - s_last_eval < 60) return;
-  want_on |=
-      check_thresh(0, 0, s_heater_on, mgos_sys_config_get_hub_heater_s0_min(),
-                   mgos_sys_config_get_hub_heater_s0_max());
-  want_on |=
-      check_thresh(1, 0, s_heater_on, mgos_sys_config_get_hub_heater_s1_min(),
-                   mgos_sys_config_get_hub_heater_s1_max());
+  for (int i = 0; i < NUM_LIMITS; i++) {
+    want_on |= check_thresh(s_heater_on, get_limits(i));
+  }
   if (s_heater_on != want_on) {
     LOG(LL_INFO, ("Heater %s -> %s", onoff(s_heater_on), onoff(want_on)));
     s_heater_on = want_on;
@@ -136,6 +163,101 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
 
   mg_rpc_send_responsef(ri, "{heater_on: %B, deadline: %lf}", s_heater_on,
                         s_deadline);
+
+out:
+  (void) cb_arg;
+  (void) fi;
+}
+
+static void hub_heater_get_limits_handler(struct mg_rpc_request_info *ri,
+                                          void *cb_arg,
+                                          struct mg_rpc_frame_info *fi,
+                                          struct mg_str args) {
+  int sid = -1, subid = -1;
+
+  json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid);
+
+  struct mbuf mb;
+  mbuf_init(&mb, 50);
+  struct json_out out = JSON_OUT_MBUF(&mb);
+  json_printf(&out, "[");
+
+  bool first = true;
+  for (int i = 0; i < NUM_LIMITS; i++) {
+    const struct mgos_config_hub_heater_limits *ls = get_limits(i);
+    if (ls == NULL || ls->sid < 0 ||
+        (sid >= 0 && !(ls->sid == sid && ls->subid == subid))) {
+      continue;
+    }
+    if (!first) json_printf(&out, ", ");
+    json_printf(&out, "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf}",
+                ls->sid, ls->subid, ls->enable, ls->min, ls->max);
+    first = false;
+  }
+
+  json_printf(&out, "]");
+  mg_rpc_send_responsef(ri, "%.*s", (int) mb.len, mb.buf);
+  mbuf_free(&mb);
+
+  (void) cb_arg;
+  (void) fi;
+}
+
+static void hub_heater_set_limits_handler(struct mg_rpc_request_info *ri,
+                                          void *cb_arg,
+                                          struct mg_rpc_frame_info *fi,
+                                          struct mg_str args) {
+  struct mgos_config_hub_heater_limits nls = {
+      .sid = -1,
+      .subid = -1,
+      .enable = false,
+      .min = 0.0,
+      .max = 0.0,
+  };
+
+  json_scanf(args.p, args.len, ri->args_fmt, &nls.sid, &nls.subid, &nls.enable,
+             &nls.min, &nls.max);
+
+  if (nls.sid < 0 || nls.subid < 0) {
+    mg_rpc_send_errorf(ri, -1, "sid and subid are required");
+    goto out;
+  }
+
+  // Try to find an existing entry for this sensor first.
+  const struct mgos_config_hub_heater_limits *ls;
+  for (int i = 0; i < NUM_LIMITS + 1; i++) {
+    ls = get_limits(i);
+    if (ls != NULL && ls->sid == nls.sid && ls->subid == nls.subid) break;
+  }
+  // If not found, find an unused entry.
+  if (ls == NULL) {
+    for (int i = 0; i < NUM_LIMITS + 1; i++) {
+      ls = get_limits(i);
+      if (ls != NULL && ls->sid < 0) break;
+    }
+  }
+  // If no unused entries, find a disabled one.
+  if (ls == NULL) {
+    for (int i = 0; i < NUM_LIMITS + 1; i++) {
+      ls = get_limits(i);
+      if (ls != NULL && !ls->enable) break;
+    }
+  }
+  if (ls == NULL) {
+    mg_rpc_send_errorf(ri, -2, "no available entries");
+    goto out;
+  }
+
+  *((struct mgos_config_hub_heater_limits *) ls) = nls;
+
+  char *msg = NULL;
+  if (!mgos_sys_config_save(&mgos_sys_config, false /* try_once */, &msg)) {
+    mg_rpc_send_errorf(ri, -1, "error saving config: %s", (msg ? msg : ""));
+    free(msg);
+    goto out;
+  } else {
+    mg_rpc_send_responsef(ri, NULL);
+  }
 
 out:
   (void) cb_arg;
@@ -231,6 +353,11 @@ bool hub_heater_init(void) {
                      hub_heater_get_status_handler, NULL);
   mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_on: %B, duration: %d}",
                      hub_heater_set_handler, NULL);
+  mg_rpc_add_handler(c, "Hub.Heater.GetLimits", "{sid: %d, subid: %d}",
+                     hub_heater_get_limits_handler, NULL);
+  mg_rpc_add_handler(c, "Hub.Heater.SetLimits",
+                     "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf}",
+                     hub_heater_set_limits_handler, NULL);
   mg_rpc_add_handler(c, "Sensor.ReportTemp",
                      "{sid: %d, name: %Q, ts: %lf, temp: %lf, rh: %lf}",
                      sensor_report_temp_handler, NULL);
