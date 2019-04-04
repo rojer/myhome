@@ -6,10 +6,28 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/graph_point_info"
+        style="@style/TextAppearance.MaterialComponents.Chip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="center_horizontal"
+        tools:text="Thu 4 Apr 2019 at 07:25:23 | 5.95" />
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/date_pick_layout"
+        android:layout_below="@id/graph_point_info" />
+
     <LinearLayout
         android:id="@+id/date_pick_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@id/graph_extremes_info"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -46,33 +64,14 @@
 
     </LinearLayout>
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/graph_extremes_info"
-        android:layout_below="@id/date_pick_layout"
-        android:layout_marginTop="16dp" />
-
-
     <TextView
         android:id="@+id/graph_extremes_info"
-        style="@style/TextAppearance.MaterialComponents.Chip"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/graph_point_info"
-        android:layout_marginTop="8dp"
-        android:gravity="center_horizontal"
-        tools:text="Min: 4.32 | Max: 15.96" />
-
-    <TextView
-        android:id="@+id/graph_point_info"
         style="@style/TextAppearance.MaterialComponents.Chip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginTop="8dp"
         android:gravity="center_horizontal"
-        tools:text="Thu 4 Apr 2019 at 07:25:23 | 5.95" />
+        tools:text="Min: 4.32 | Max: 15.96" />
 
 </RelativeLayout>
