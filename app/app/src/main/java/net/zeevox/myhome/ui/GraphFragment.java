@@ -217,27 +217,29 @@ public class GraphFragment extends Fragment {
                         }
                         Collections.sort(entries, new EntryXComparator());
 
-                        LineDataSet dataSet = new LineDataSet(entries, name);
-                        dataSet.setDrawCircles(false);
-                        dataSet.setColor(getResources().getColor(R.color.colorPrimary));
+                        getActivity().runOnUiThread(() -> {
+                            LineDataSet dataSet = new LineDataSet(entries, name);
+                            dataSet.setDrawCircles(false);
+                            dataSet.setColor(getResources().getColor(R.color.colorPrimary));
 
-                        if (extremes[0] < 0) {
-                            chart.getAxisLeft().setAxisMinimum(extremes[0]);
-                        } else {
-                            chart.getAxisLeft().setAxisMinimum(0f);
-                        }
+                            if (extremes[0] < 0) {
+                                chart.getAxisLeft().setAxisMinimum(extremes[0]);
+                            } else {
+                                chart.getAxisLeft().setAxisMinimum(0f);
+                            }
 
-                        LineData lineData = new LineData(dataSet);
+                            LineData lineData = new LineData(dataSet);
 
-                        chart.setData(lineData);
-                        chart.invalidate();
+                            chart.setData(lineData);
+                            chart.invalidate();
 
-                        TextView extremesInfo = view.findViewById(R.id.graph_extremes_info);
-                        if (preferences.getBoolean(SettingsFragment.SHOW_EXTREMES, true)) {
-                            extremesInfo.setText(String.format(Locale.getDefault(), "Min: %.2f | Max: %.2f", extremes[0], extremes[1]));
-                        } else {
-                            extremesInfo.setVisibility(View.GONE);
-                        }
+                            TextView extremesInfo = view.findViewById(R.id.graph_extremes_info);
+                            if (preferences.getBoolean(SettingsFragment.SHOW_EXTREMES, true)) {
+                                extremesInfo.setText(String.format(Locale.getDefault(), "Min: %.2f | Max: %.2f", extremes[0], extremes[1]));
+                            } else {
+                                extremesInfo.setVisibility(View.GONE);
+                            }
+                        });
 
                         break;
                 }
