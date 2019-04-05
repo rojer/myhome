@@ -143,9 +143,7 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
     goto out;
   }
 
-  if (duration > 0) {
-    if (duration < 30) duration = 30;
-  } else {
+  if (duration <= 0) {
     duration = 12 * 3600;
   }
 
@@ -160,6 +158,8 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   double now = cs_time();
   s_deadline = now + duration;
   s_last_action_ts = now;
+
+  hub_heater_eval();
 
   mg_rpc_send_responsef(ri, "{heater_on: %B, deadline: %lf}", s_heater_on,
                         s_deadline);
