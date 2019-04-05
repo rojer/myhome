@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,13 @@ public class SensorFragment extends Fragment {
     private final DecimalFormat oneDecimal = new DecimalFormat("#.#");
     private final DecimalFormat oneDecimalExact = new DecimalFormat("0.0");
     private final String TAG = getClass().getSimpleName();
+    private Sensor sensor;
+    private double currentTemp;
+    private double relativeHumidity;
+    private double[] tempTargets;
+    private double hysteresis;
+    private boolean targetEnabled;
+    private double timestamp;
 
     @Nullable
     @Override
@@ -38,15 +46,7 @@ public class SensorFragment extends Fragment {
 
         assert getArguments() != null;
 
-        Sensor sensor = MainActivity.sensors.getBySID(getArguments().getInt(Sensor.SID));
-
-        assert sensor != null;
-        double currentTemp = sensor.getValue(Sensor.TEMP_SUBID, 0.0);
-        double relativeHumidity = sensor.getValue(Sensor.RH_SUBID, -1000.0);
-        final double[] tempTargets = sensor.getTargets();
-        final double hysteresis = tempTargets[1] - tempTargets[0];
-        boolean targetEnabled = sensor.isTargetEnabled();
-        double timestamp = sensor.getTimestamp();
+        onSensorUpdated(MainActivity.sensors.getBySID(getArguments().getInt(Sensor.SID)));
 
         TextView tempUnitsTextView = view.findViewById(R.id.sensor_units);
         tempUnitsTextView.setText(R.string.units_celsius);
@@ -157,5 +157,16 @@ public class SensorFragment extends Fragment {
         } catch (java.lang.InstantiationException e) {
             e.printStackTrace();
         }
+    }
+
+    public void onSensorUpdated(@NonNull Sensor s) {
+        Log.i("SensorFragment", "onSensorUpdated");
+        this.sensor = s;
+        currentTemp = sensor.getValue(Sensor.TEMP_SUBID, 0.0);
+        relativeHumidity = sensor.getValue(Sensor.RH_SUBID, -1000.0);
+        tempTargets = sensor.getTargets();
+        hysteresis = tempTargets[1] - tempTargets[0];
+        targetEnabled = sensor.isTargetEnabled();
+        timestamp = sensor.getTimestamp();
     }
 }

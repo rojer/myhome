@@ -1,11 +1,13 @@
 package net.zeevox.myhome.ui;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,7 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 
+import net.zeevox.myhome.Heater;
 import net.zeevox.myhome.R;
 import net.zeevox.myhome.json.CustomJsonObject;
 import net.zeevox.myhome.json.Methods;
@@ -25,6 +28,9 @@ import okhttp3.WebSocket;
 
 public class DashboardFragment extends Fragment {
 
+    private View view;
+    private Heater heater;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -32,27 +38,16 @@ public class DashboardFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onViewCreated(@NonNull View v, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(v, savedInstanceState);
 
-        if (MainActivity.heater != null) {
-            TextView heaterStatus = view.findViewById(R.id.heater_status);
-            if (!MainActivity.heater.isOn() && MainActivity.heater.isInAutomaticMode()) {
-                heaterStatus.setText(R.string.state_off_auto);
-            } else if (!MainActivity.heater.isOn() && MainActivity.heater.isInManualMode()) {
-                heaterStatus.setText(R.string.state_off_manual);
-            } else if (MainActivity.heater.isInAutomaticMode()) {
-                heaterStatus.setText(R.string.state_on_auto);
-            } else if (MainActivity.heater.isInManualMode()) {
-                heaterStatus.setText(R.string.state_on_manual);
-            }
-        }
+        this.view = v;
 
-        view.findViewById(R.id.heater_status_layout).setOnClickListener(v -> {
+        view.findViewById(R.id.heater_status_layout).setOnClickListener(v5 -> {
 
             final String[] selection = new String[1];
 
-            if (MainActivity.heater == null) {
+            if (heater == null) {
                 Snackbar.make(view.findViewById(android.R.id.content), "Please refresh and try again", Snackbar.LENGTH_SHORT).show();
                 return;
             }
@@ -63,12 +58,12 @@ public class DashboardFragment extends Fragment {
             RadioGroup heaterSelection = dialog.findViewById(R.id.heater_type_selection);
             View divider = dialog.findViewById(R.id.heater_divider);
 
-            if (MainActivity.heater.isInAutomaticMode()) {
+            if (heater.isInAutomaticMode()) {
                 selection[0] = "auto";
                 heaterSelection.check(R.id.selection_heater_auto);
                 divider.setVisibility(View.GONE);
                 dialog.findViewById(R.id.number_pick_layout).setVisibility(View.GONE);
-            } else if (MainActivity.heater.isOn()) {
+            } else if (heater.isOn()) {
                 selection[0] = "on";
                 heaterSelection.check(R.id.selection_heater_on);
             } else {
@@ -141,6 +136,23 @@ public class DashboardFragment extends Fragment {
                 dialog.dismiss();
             });
             dialog.show();
+        });
+    }
+
+    public void onHeaterUpdated(@NonNull Activity activity,  @NonNull Heater heater) {
+        Log.i("DashboardFragment", "onHeaterUpdated");
+        this.heater = heater;
+        activity.runOnUiThread(() -> {
+            TextView heaterStatus = view.findViewById(R.id.heater_status);
+            if (!heater.isOn() && heater.isInAutomaticMode()) {
+                heaterStatus.setText(R.string.state_off_auto);
+            } else if (!heater.isOn() && heater.isInManualMode()) {
+                heaterStatus.setText(R.string.state_off_manual);
+            } else if (heater.isInAutomaticMode()) {
+                heaterStatus.setText(R.string.state_on_auto);
+            } else if (heater.isInManualMode()) {
+                heaterStatus.setText(R.string.state_on_manual);
+            }
         });
     }
 }

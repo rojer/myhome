@@ -8,6 +8,7 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -56,13 +57,21 @@ public class MainActivity extends AppCompatActivity
     public static Heater heater;
     public static WebSocketUtils webSocketUtils;
     private final boolean[] web_socket_connected = {false};
+    private final FragmentManager fragmentManager = getSupportFragmentManager();
     private final Gson gson = new Gson();
+    private final Handler handler = new Handler();
     private WebSocketListener webSocketListener;
-    private Fragment fragment;
     private NavigationView navigationView;
     private MenuItem menuItem;
     private SharedPreferences preferences;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private final Runnable refreshData = new Runnable() {
+        @Override
+        public void run() {
+            refreshData();
+            handler.postDelayed(this, 5000);
+        }
+    };
 
     public static int toInt(Object o) {
         Double d = (Double) o;
@@ -81,8 +90,8 @@ public class MainActivity extends AppCompatActivity
             getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
         }
 
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.frame_layout, new DashboardFragment());
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.frame_layout, new DashboardFragment(), DashboardFragment.class.getSimpleName());
         fragmentTransaction.commit();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -105,17 +114,8 @@ public class MainActivity extends AppCompatActivity
             swipeRefreshLayout.setRefreshing(false);
             if (!refreshData()) {
                 Snackbar.make(findViewById(android.R.id.content), "Please wait while the device connects", Snackbar.LENGTH_SHORT).show();
-            } else {
-                if (menuItem != null) {
-                    onNavigationItemSelected(menuItem);
-                } else {
-                    try {
-                        getSupportFragmentManager().beginTransaction().replace(R.id.frame_layout, DashboardFragment.class.newInstance()).commit();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Snackbar.make(findViewById(android.R.id.content), "Please switch to another tab and try again", Snackbar.LENGTH_LONG).show();
-                    }
-                }
+            } else if (menuItem != null) {
+                onNavigationItemSelected(menuItem);
             }
         });
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
@@ -184,6 +184,8 @@ public class MainActivity extends AppCompatActivity
                         Sensor sensor = sensors.getBySID(toInt(resultSensor.get(Sensor.SID)));
                         sensor.setTimestamp((Double) resultSensor.get(Sensor.TIMESTAMP));
                         sensor.newValue(toInt(resultSensor.get(Sensor.SUBID)), (Double) resultSensor.get(Sensor.VALUE));
+                        Fragment fragment1 = fragmentManager.findFragmentByTag(SensorFragment.class.getSimpleName());
+                        if (fragment1 instanceof SensorFragment) ((SensorFragment) fragment1).onSensorUpdated(sensor);
                         break;
                     case 638:
                         ArrayList<Map> mapArrayList = (ArrayList<Map>) data.get(Sensor.RESULT);
@@ -200,14 +202,18 @@ public class MainActivity extends AppCompatActivity
                                 toInt(resultSHL.get(Sensor.SUBID)),
                                 (Double) resultSHL.get(Sensor.TARGET_MIN),
                                 (Double) resultSHL.get(Sensor.TARGET_MAX));
+                        Fragment fragment2 = fragmentManager.findFragmentByTag(SensorFragment.class.getSimpleName());
+                        if (fragment2 instanceof SensorFragment) ((SensorFragment) fragment2).onSensorUpdated(sensor1);
                         break;
                     case 8347:
                         Map resultHeater = (Map) data.get(Sensor.RESULT);
                         assert resultHeater != null;
                         heater = new Heater((boolean) resultHeater.get(Heater.ON), toInt(resultHeater.get(Heater.DURATION)));
+                        Fragment fragment3 = fragmentManager.findFragmentByTag(DashboardFragment.class.getSimpleName());
+                        if (fragment3 instanceof DashboardFragment) ((DashboardFragment) fragment3).onHeaterUpdated(MainActivity.this, heater);
                         break;
                     case 53:
-                        //webSocket.send("{\"method\": \"Hub.Heater.GetStatus\", \"id\": 8347}");
+                        webSocket.send(gson.toJson(new CustomJsonObject().setId(8347).setMethod(Methods.HEATER_GET_STATUS)));
                         break;
                 }
             }
@@ -236,7 +242,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        refreshData();
+        handler.post(refreshData);
     }
 
     private boolean refreshData() {
@@ -289,6 +295,7 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         if (web_socket_connected[0]) webSocketUtils.getWebSocket().close(4522, "onPause");
+        handler.removeCallbacks(refreshData);
     }
 
     @Override
@@ -298,10 +305,10 @@ public class MainActivity extends AppCompatActivity
             drawer.closeDrawer(GravityCompat.START);
         } else {
             // Handle back presses for navigating up from fragment to fragment
-            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+            if (fragmentManager.getBackStackEntryCount() == 0) {
                 super.onBackPressed();
             } else {
-                getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             }
         }
     }
@@ -313,6 +320,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         menuItem = item;
+        Fragment fragment = null;
 
         Class fragmentClass;
         Bundle bundle = new Bundle();
@@ -339,8 +347,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         assert fragment != null;
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.frame_layout, fragment)
+        fragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, fragment, fragment.getClass().getSimpleName())
                 .commit();
 
         if (item.isCheckable()) {
