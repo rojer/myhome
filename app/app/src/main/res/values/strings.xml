@@ -3,6 +3,7 @@
     <string name="accessibility_temp_minus">Decrease temperature</string>
     <string name="accessibility_temp_plus">Increase temperature</string>
 
+    <string name="action_connect">Connect</string>
     <string name="action_history">History</string>
     <string name="action_schedule">Schedule</string>
     <string name="action_settings">Settings</string>
@@ -14,6 +15,8 @@
     <string name="desc_target_control">Enable control</string>
     <string name="desc_target_temp">Target temperature</string>
     <string name="desc_welcome_home">Welcome home!</string>
+
+    <string name="error_wifi_not_connected">WiFi is not connected</string>
 
     <string name="graph_yesterday">Yesterday</string>
     <string name="graph_days_ago">%d days ago</string>

@@ -1,9 +1,15 @@
 package net.zeevox.myhome.ui;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -237,8 +243,32 @@ public class MainActivity extends AppCompatActivity
         Log.d(getClass().getSimpleName(), "refreshData called");
 
         if (!web_socket_connected[0]) {
-            swipeRefreshLayout.setRefreshing(true);
-            webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.HUB_URL, "ws://192.168.1.10/rpc"), webSocketListener);
+            // Turn on the WiFi of the device if it isn't already
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (!wifiManager.isWifiEnabled()) wifiManager.setWifiEnabled(true);
+
+            // If WiFi is connected, we proceed to connect, otherwise, inform the user and open settings page to connect to a WiFi network
+            ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
+                swipeRefreshLayout.setRefreshing(true);
+                webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.HUB_URL, "ws://192.168.1.10/rpc"), webSocketListener);
+            } else {
+                Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), R.string.error_wifi_not_connected, Snackbar.LENGTH_INDEFINITE);
+                snackbar.setAction(R.string.action_connect, v -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)
+                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                .addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                                .addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS));
+                    } catch (ActivityNotFoundException e) { // In some cases, a matching Activity may not exist, so we ensure we safeguard against this.
+                        startActivity(new Intent(Settings.ACTION_SETTINGS)
+                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                .addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                                .addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS));
+                    }
+                    snackbar.dismiss();
+                }).show();
+            }
             return false;
         } else {
             WebSocket webSocket = webSocketUtils.getWebSocket();
@@ -258,7 +288,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onPause() {
         super.onPause();
-        webSocketUtils.getWebSocket().close(4522, "onPause");
+        if (web_socket_connected[0]) webSocketUtils.getWebSocket().close(4522, "onPause");
     }
 
     @Override
