@@ -315,6 +315,8 @@ static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
     hub_add_data(&sd0);
   }
 
+  hub_heater_eval();
+
 out:
   mg_rpc_send_responsef(ri, NULL);
   free(name);
