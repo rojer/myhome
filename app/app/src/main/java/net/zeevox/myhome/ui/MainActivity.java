@@ -30,6 +30,9 @@ import net.zeevox.myhome.R;
 import net.zeevox.myhome.Sensor;
 import net.zeevox.myhome.Sensors;
 import net.zeevox.myhome.WebSocketUtils;
+import net.zeevox.myhome.json.CustomJsonObject;
+import net.zeevox.myhome.json.Methods;
+import net.zeevox.myhome.json.Params;
 
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity
     public static Heater heater;
     public static WebSocketUtils webSocketUtils;
     private final boolean[] web_socket_connected = {false};
+    private final Gson gson = new Gson();
     private WebSocketListener webSocketListener;
     private Fragment fragment;
     private NavigationView navigationView;
@@ -110,8 +114,6 @@ public class MainActivity extends AppCompatActivity
         });
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
 
-        final Gson gson = new Gson();
-
         webSocketUtils = new WebSocketUtils();
         webSocketListener = new WebSocketListener() {
             @Override
@@ -119,7 +121,7 @@ public class MainActivity extends AppCompatActivity
                 super.onOpen(webSocket, response);
                 web_socket_connected[0] = true;
                 MainActivity.this.runOnUiThread(() -> swipeRefreshLayout.setRefreshing(false));
-                webSocket.send("{\"method\": \"Hub.Data.List\", \"id\": 1157}");
+                webSocket.send(gson.toJson(new CustomJsonObject().setMethod(Methods.DATA_LIST).setId(1157)));
                 refreshData();
             }
 
@@ -243,13 +245,12 @@ public class MainActivity extends AppCompatActivity
             for (Sensor sensor : sensors.getList()) {
                 for (Integer SubID : sensor.getValues().keySet()) {
                     Log.d("WebSocket", "Requesting data from sensor " + sensor.getSID() + " #" + SubID);
-                    webSocket.send("{\"method\": \"Hub.Data.Get\", \"id\": 637, \"params\": {\"sid\": "
-                            + sensor.getSID() + ", \"subid\": " + SubID + "}}");
-                    webSocket.send("{\"method\": \"Hub.Heater.GetLimits\", \"id\": 638, \"params\": {\"sid\": "
-                            + sensor.getSID() + ", \"subid\": " + SubID + "}}");
+                    Params params = new Params().setSid(sensor.getSID()).setSubid(SubID);
+                    webSocket.send(gson.toJson(new CustomJsonObject().setMethod(Methods.DATA_GET).setId(637).setParams(params)));
+                    webSocket.send(gson.toJson(new CustomJsonObject().setMethod(Methods.HEATER_GET_LIMITS).setId(638).setParams(params)));
                 }
             }
-            webSocket.send("{\"method\": \"Hub.Heater.GetStatus\", \"id\": 8347}");
+            webSocket.send(gson.toJson(new CustomJsonObject().setId(8347).setMethod(Methods.HEATER_GET_STATUS)));
             return true;
         }
     }

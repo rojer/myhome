@@ -1,5 +1,10 @@
 package net.zeevox.myhome;
 
+import com.google.gson.Gson;
+
+import net.zeevox.myhome.json.CustomJsonObject;
+import net.zeevox.myhome.json.Methods;
+import net.zeevox.myhome.json.Params;
 import net.zeevox.myhome.ui.MainActivity;
 
 import java.util.HashMap;
@@ -116,7 +121,12 @@ public class Sensor {
     }
 
     private void onHeaterChanged(WebSocket webSocket) {
-        webSocket.send("{\"method\": \"Hub.Heater.SetLimits\", \"id\": 639, \"params\": {\"sid\": "
-                + sensorSID + ", \"subid\": " + targetSubID + ", \"min\": " + targetMin + ", \"max\": " + targetMax + ", \"enable\": " + targetEnabled + "}}");
+        webSocket.send(new Gson().toJson(
+                new CustomJsonObject().setMethod(Methods.HEATER_SET_LIMITS).setId(639).setParams(new Params()
+                        .setSid(sensorSID)
+                        .setSubid(targetSubID)
+                        .setMin(targetMin)
+                        .setMax(targetMax)
+                        .setEnable(targetEnabled))));
     }
 }

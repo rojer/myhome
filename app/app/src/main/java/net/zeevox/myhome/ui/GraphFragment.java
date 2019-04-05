@@ -28,6 +28,9 @@ import net.zeevox.myhome.R;
 import net.zeevox.myhome.Sensor;
 import net.zeevox.myhome.WebSocketUtils;
 import net.zeevox.myhome.graph.TimeValueFormatter;
+import net.zeevox.myhome.json.CustomJsonObject;
+import net.zeevox.myhome.json.Methods;
+import net.zeevox.myhome.json.Params;
 
 import java.io.EOFException;
 import java.text.SimpleDateFormat;
@@ -183,8 +186,12 @@ public class GraphFragment extends Fragment {
             public void onOpen(WebSocket webSocket, Response response) {
                 super.onOpen(webSocket, response);
                 GraphFragment.this.webSocket = webSocket;
-                webSocket.send("{\"method\": \"Sensor.GetData\", \"id\": 100, \"params\": {\"sid\": "
-                        + sid + ", \"limit\": 10000, \"subid\": " + subid + ", \"ts_from\": " + timeFrom + ", \"ts_to\": " + timeTo + "}}");
+                webSocket.send(new Gson().toJson(new CustomJsonObject().setId(100).setMethod(Methods.SENSOR_GET_DATA).setParams(new Params()
+                        .setLimit(10000)
+                        .setSid(sid)
+                        .setSubid(subid)
+                        .setTs_from(timeFrom)
+                        .setTs_to(timeTo))));
             }
 
             @Override

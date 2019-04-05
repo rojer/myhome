@@ -14,7 +14,12 @@ import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+
 import net.zeevox.myhome.R;
+import net.zeevox.myhome.json.CustomJsonObject;
+import net.zeevox.myhome.json.Methods;
+import net.zeevox.myhome.json.Params;
 
 import okhttp3.WebSocket;
 
@@ -118,17 +123,21 @@ public class DashboardFragment extends Fragment {
             Button positiveButton = dialog.findViewById(R.id.dialog_button_ok);
             positiveButton.setOnClickListener(v1 -> {
                 WebSocket webSocket = MainActivity.webSocketUtils.getWebSocket();
+                CustomJsonObject customJsonObject = new CustomJsonObject().setId(53).setMethod(Methods.HEATER_SET_STATUS);
+                Params params = new Params();
                 switch (selection[0]) {
                     case "off":
-                        webSocket.send("{\"method\": \"Hub.Heater.Set\", \"id\": 53, \"params\": {\"heater_on\": false, \"duration\": " + duration[0] * 60 + "}}");
+                        params.setDuration(duration[0] * 60).setHeater_on(false);
                         break;
                     case "auto":
-                        webSocket.send("{\"method\": \"Hub.Heater.Set\", \"id\": 53, \"params\": {\"heater_on\": false, \"duration\": " + 1 + "}}");
+                        params.setDuration(1).setHeater_on(false);
                         break;
                     case "on":
-                        webSocket.send("{\"method\": \"Hub.Heater.Set\", \"id\": 53, \"params\": {\"heater_on\": true, \"duration\": " + duration[0] * 60 + "}}");
+                        params.setDuration(duration[0] * 60).setHeater_on(true);
                         break;
                 }
+                customJsonObject.setParams(params);
+                webSocket.send(new Gson().toJson(customJsonObject));
                 dialog.dismiss();
             });
             dialog.show();
