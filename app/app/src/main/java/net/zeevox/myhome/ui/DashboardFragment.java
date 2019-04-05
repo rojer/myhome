@@ -127,13 +127,13 @@ public class DashboardFragment extends Fragment {
                 Params params = new Params();
                 switch (selection[0]) {
                     case "off":
-                        params.setDuration(duration[0] * 60).setHeater_on(false);
+                        params.setDuration(duration[0] * 60).setHeaterOn(false);
                         break;
                     case "auto":
-                        params.setDuration(1).setHeater_on(false);
+                        params.setDuration(1).setHeaterOn(false);
                         break;
                     case "on":
-                        params.setDuration(duration[0] * 60).setHeater_on(true);
+                        params.setDuration(duration[0] * 60).setHeaterOn(true);
                         break;
                 }
                 customJsonObject.setParams(params);

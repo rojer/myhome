@@ -47,8 +47,8 @@ import okhttp3.WebSocketListener;
 public class GraphFragment extends Fragment {
 
     public static final String DATA = "data";
-    List<Entry> entries = new ArrayList<>();
-    private WebSocketUtils webSocketUtils = new WebSocketUtils();
+    private final WebSocketUtils webSocketUtils = new WebSocketUtils();
+    private List<Entry> entries = new ArrayList<>();
     private WebSocket webSocket;
     private int sid;
     private int subid;
@@ -188,10 +188,10 @@ public class GraphFragment extends Fragment {
                 GraphFragment.this.webSocket = webSocket;
                 webSocket.send(new Gson().toJson(new CustomJsonObject().setId(100).setMethod(Methods.SENSOR_GET_DATA).setParams(new Params()
                         .setLimit(10000)
-                        .setSid(sid)
-                        .setSubid(subid)
-                        .setTs_from(timeFrom)
-                        .setTs_to(timeTo))));
+                        .setSID(sid)
+                        .setSubID(subid)
+                        .setTimeFrom(timeFrom)
+                        .setTimeTo(timeTo))));
             }
 
             @Override
@@ -250,11 +250,6 @@ public class GraphFragment extends Fragment {
 
                         break;
                 }
-            }
-
-            @Override
-            public void onClosed(WebSocket webSocket, int code, String reason) {
-                super.onClosed(webSocket, code, reason);
             }
 
             @Override

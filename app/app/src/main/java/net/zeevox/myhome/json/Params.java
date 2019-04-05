@@ -1,31 +1,32 @@
 package net.zeevox.myhome.json;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class Params {
-    int sid;
-    int subid;
-    boolean heater_on;
-    int duration;
-    int limit;
-    float ts_from;
-    float ts_to;
-    double min;
-    double max;
-    boolean enable;
+    private int sid;
+    private int subid;
+    private boolean heater_on;
+    private int duration;
+    private int limit;
+    private float ts_from;
+    private float ts_to;
+    private double min;
+    private double max;
+    private boolean enable;
 
     public Params() {
     }
 
-    public Params setSid(int sid) {
+    public Params setSID(int sid) {
         this.sid = sid;
         return this;
     }
 
-    public Params setSubid(int subid) {
+    public Params setSubID(int subid) {
         this.subid = subid;
         return this;
     }
 
-    public Params setHeater_on(boolean heater_on) {
+    public Params setHeaterOn(boolean heater_on) {
         this.heater_on = heater_on;
         return this;
     }
@@ -40,12 +41,12 @@ public class Params {
         return this;
     }
 
-    public Params setTs_from(float ts_from) {
+    public Params setTimeFrom(float ts_from) {
         this.ts_from = ts_from;
         return this;
     }
 
-    public Params setTs_to(float ts_to) {
+    public Params setTimeTo(float ts_to) {
         this.ts_to = ts_to;
         return this;
     }

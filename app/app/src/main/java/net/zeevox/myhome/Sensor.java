@@ -110,21 +110,21 @@ public class Sensor {
         onHeaterChanged(MainActivity.webSocketUtils.getWebSocket());
     }
 
+    public double[] getTargets() {
+        return new double[]{targetMin, targetMax};
+    }
+
     public void setTargets(double[] targets) {
         targetMin = targets[0];
         targetMax = targets[1];
         onHeaterChanged(MainActivity.webSocketUtils.getWebSocket());
     }
 
-    public double[] getTargets() {
-        return new double[]{targetMin, targetMax};
-    }
-
     private void onHeaterChanged(WebSocket webSocket) {
         webSocket.send(new Gson().toJson(
                 new CustomJsonObject().setMethod(Methods.HEATER_SET_LIMITS).setId(639).setParams(new Params()
-                        .setSid(sensorSID)
-                        .setSubid(targetSubID)
+                        .setSID(sensorSID)
+                        .setSubID(targetSubID)
                         .setMin(targetMin)
                         .setMax(targetMax)
                         .setEnable(targetEnabled))));

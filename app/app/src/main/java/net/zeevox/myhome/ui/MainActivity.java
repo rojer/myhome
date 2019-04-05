@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity
             for (Sensor sensor : sensors.getList()) {
                 for (Integer SubID : sensor.getValues().keySet()) {
                     Log.d("WebSocket", "Requesting data from sensor " + sensor.getSID() + " #" + SubID);
-                    Params params = new Params().setSid(sensor.getSID()).setSubid(SubID);
+                    Params params = new Params().setSID(sensor.getSID()).setSubID(SubID);
                     webSocket.send(gson.toJson(new CustomJsonObject().setMethod(Methods.DATA_GET).setId(637).setParams(params)));
                     webSocket.send(gson.toJson(new CustomJsonObject().setMethod(Methods.HEATER_GET_LIMITS).setId(638).setParams(params)));
                 }
