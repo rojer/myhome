@@ -130,6 +130,8 @@ public class GraphFragment extends Fragment {
         buttonBack.setOnClickListener(v -> {
             daysBack += 1;
             date.setText(daysBack == 1 ? getString(R.string.graph_yesterday) : String.format(Locale.getDefault(), getString(R.string.graph_days_ago), daysBack));
+            chart.highlightValues(null);
+            ((TextView) view.findViewById(R.id.graph_point_info)).setText(null);
             buttonForward.setEnabled(true);
             buttonForward.setVisibility(View.VISIBLE);
             fetchData();
@@ -137,6 +139,8 @@ public class GraphFragment extends Fragment {
 
         buttonForward.setOnClickListener(v -> {
             daysBack -= 1;
+            chart.highlightValues(null);
+            ((TextView) view.findViewById(R.id.graph_point_info)).setText(null);
             if (daysBack == 0) {
                 buttonForward.setEnabled(false);
                 buttonForward.setVisibility(View.INVISIBLE);
