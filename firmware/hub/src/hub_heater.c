@@ -255,9 +255,11 @@ static void hub_heater_set_limits_handler(struct mg_rpc_request_info *ri,
     mg_rpc_send_errorf(ri, -1, "error saving config: %s", (msg ? msg : ""));
     free(msg);
     goto out;
-  } else {
-    mg_rpc_send_responsef(ri, NULL);
   }
+
+  hub_heater_eval();
+
+  mg_rpc_send_responsef(ri, NULL);
 
 out:
   (void) cb_arg;
