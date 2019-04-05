@@ -30,6 +30,9 @@ public class DashboardFragment extends Fragment {
 
     private View view;
     private Heater heater;
+    private final static String HEATER_SELECTION_OFF = "off";
+    private final static String HEATER_SELECTION_AUTO = "auto";
+    private final static String HEATER_SELECTION_ON = "on";
 
     @Nullable
     @Override
@@ -48,7 +51,7 @@ public class DashboardFragment extends Fragment {
             final String[] selection = new String[1];
 
             if (heater == null) {
-                Snackbar.make(view.findViewById(android.R.id.content), "Please refresh and try again", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(view.findViewById(android.R.id.content), R.string.error_no_heater, Snackbar.LENGTH_SHORT).show();
                 return;
             }
 
@@ -59,15 +62,15 @@ public class DashboardFragment extends Fragment {
             View divider = dialog.findViewById(R.id.heater_divider);
 
             if (heater.isInAutomaticMode()) {
-                selection[0] = "auto";
+                selection[0] = HEATER_SELECTION_AUTO;
                 heaterSelection.check(R.id.selection_heater_auto);
                 divider.setVisibility(View.GONE);
                 dialog.findViewById(R.id.number_pick_layout).setVisibility(View.GONE);
             } else if (heater.isOn()) {
-                selection[0] = "on";
+                selection[0] = HEATER_SELECTION_ON;
                 heaterSelection.check(R.id.selection_heater_on);
             } else {
-                selection[0] = "off";
+                selection[0] = HEATER_SELECTION_OFF;
                 heaterSelection.check(R.id.selection_heater_off);
             }
 
@@ -76,16 +79,16 @@ public class DashboardFragment extends Fragment {
                     case R.id.selection_heater_auto:
                         divider.setVisibility(View.GONE);
                         dialog.findViewById(R.id.number_pick_layout).setVisibility(View.GONE);
-                        selection[0] = "auto";
+                        selection[0] = HEATER_SELECTION_AUTO;
                         break;
                     case R.id.selection_heater_off:
                         divider.setVisibility(View.VISIBLE);
                         dialog.findViewById(R.id.number_pick_layout).setVisibility(View.VISIBLE);
-                        selection[0] = "off";
+                        selection[0] = HEATER_SELECTION_OFF;
                     case R.id.selection_heater_on:
                         divider.setVisibility(View.VISIBLE);
                         dialog.findViewById(R.id.number_pick_layout).setVisibility(View.VISIBLE);
-                        selection[0] = "on";
+                        selection[0] = HEATER_SELECTION_ON;
                 }
             });
 
@@ -121,13 +124,13 @@ public class DashboardFragment extends Fragment {
                 CustomJsonObject customJsonObject = new CustomJsonObject().setId(53).setMethod(Methods.HEATER_SET_STATUS);
                 Params params = new Params();
                 switch (selection[0]) {
-                    case "off":
+                    case HEATER_SELECTION_OFF:
                         params.setDuration(duration[0] * 60).setHeaterOn(false);
                         break;
-                    case "auto":
+                    case HEATER_SELECTION_AUTO:
                         params.setDuration(1).setHeaterOn(false);
                         break;
-                    case "on":
+                    case HEATER_SELECTION_ON:
                         params.setDuration(duration[0] * 60).setHeaterOn(true);
                         break;
                 }

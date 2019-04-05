@@ -43,6 +43,7 @@ import net.zeevox.myhome.json.Params;
 
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -107,13 +108,13 @@ public class MainActivity extends AppCompatActivity
 
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        ((TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_header_app_version)).setText(String.format("v%s", BuildConfig.VERSION_NAME));
+        ((TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_header_app_version)).setText(String.format(getString(R.string.nav_app_version), BuildConfig.VERSION_NAME));
 
         swipeRefreshLayout = findViewById(R.id.dashboard_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> {
             swipeRefreshLayout.setRefreshing(false);
             if (!refreshData()) {
-                Snackbar.make(findViewById(android.R.id.content), "Please wait while the device connects", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(findViewById(android.R.id.content), R.string.error_device_connecting, Snackbar.LENGTH_SHORT).show();
             } else if (menuItem != null) {
                 onNavigationItemSelected(menuItem);
             }
@@ -134,15 +135,12 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onMessage(WebSocket webSocket, String text) {
                 super.onMessage(webSocket, text);
-                Log.d("WebSocket onMessage", text);
                 Map data = gson.fromJson(text, Map.class);
-                Log.d("WebSocket message id", String.valueOf(toInt(data.get("id"))));
                 if (data.get("error") != null) {
                     Map error = (Map) data.get("error");
                     assert error != null;
-                    Snackbar.make(findViewById(android.R.id.content), "Error " +
-                            toInt(error.get("code"))
-                            + ": " + error.get("message"), Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(findViewById(android.R.id.content),
+                            String.format(Locale.getDefault(), getString(R.string.error_code_message), toInt(error.get("code")), error.get("message")), Snackbar.LENGTH_LONG).show();
                     return;
                 }
 
@@ -229,8 +227,8 @@ public class MainActivity extends AppCompatActivity
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                 super.onFailure(webSocket, t, response);
                 if (t instanceof SocketTimeoutException) {
-                    Snackbar.make(findViewById(android.R.id.content), "Connection failure", Snackbar.LENGTH_SHORT)
-                            .setAction("REFRESH", v -> refreshData())
+                    Snackbar.make(findViewById(android.R.id.content), R.string.error_connection_failure, Snackbar.LENGTH_SHORT)
+                            .setAction(R.string.action_refresh, v -> refreshData())
                             .show();
                 }
                 t.printStackTrace();

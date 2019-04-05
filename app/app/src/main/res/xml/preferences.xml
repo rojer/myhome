@@ -1,41 +1,38 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory android:title="Connection">
+    <PreferenceCategory android:title="@string/prefs_category_connection">
         <SwitchPreference
             android:defaultValue="true"
             android:enabled="false"
-            android:title="Connect using web socket" />
+            android:title="@string/prefs_title_use_websocket" />
         <EditTextPreference
             android:defaultValue="ws://192.168.1.10/rpc"
-            android:enabled="true"
             android:key="hub_url"
-            android:title="Hub connection URL" />
+            android:title="@string/prefs_title_hub_url" />
         <EditTextPreference
             android:defaultValue="wss://rojer.me/ss/rpc"
-            android:enabled="true"
             android:key="data_url"
-            android:title="Historical data URL" />
+            android:title="@string/prefs_title_data_url" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Sensors">
+    <PreferenceCategory android:title="@string/prefs_category_sensors">
         <ListPreference
             android:defaultValue="0"
             android:enabled="false"
-            android:entries="@array/prefs_sensor_unit_titles"
-            android:entryValues="@array/prefs_sensor_unit_values"
+            android:entries="@array/prefs_value_units_titles"
+            android:entryValues="@array/prefs_value_units_values"
             android:key="value_units"
             android:negativeButtonText="@null"
             android:positiveButtonText="@null"
             android:summary="%s"
-            android:title="Sensor units" />
+            android:title="@string/prefs_title_value_units" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Graphing">
+    <PreferenceCategory android:title="@string/prefs_category_graphs">
         <SwitchPreference
             android:defaultValue="true"
-            android:enabled="true"
             android:key="show_extremes"
-            android:title="Show minimum and maximum" />
+            android:title="@string/prefs_title_show_extremes" />
         <SwitchPreference
             android:defaultValue="true"
             android:key="show_limit_line"
-            android:title="Show target temperature on graph" />
+            android:title="@string/prefs_title_show_limit_line" />
     </PreferenceCategory>
 </PreferenceScreen>
