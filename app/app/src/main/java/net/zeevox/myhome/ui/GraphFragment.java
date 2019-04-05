@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -76,6 +77,8 @@ public class GraphFragment extends Fragment {
         sid = getArguments().getInt(Sensor.SID);
         subid = getArguments().getInt(Sensor.SUBID);
 
+        float target = ((Double) MainActivity.sensors.getBySID(sid).getTargets()[1]).floatValue();
+
         switch (subid) {
             case Sensor.TEMP_SUBID:
                 name = "Temperature";
@@ -115,6 +118,10 @@ public class GraphFragment extends Fragment {
         chart.getXAxis().setValueFormatter(new TimeValueFormatter());
         chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         chart.getXAxis().setDrawGridLines(false);
+        if (subid == Sensor.TEMP_SUBID &&
+                PreferenceManager.getDefaultSharedPreferences(
+                        getContext()).getBoolean(SettingsFragment.SHOW_LIMIT_LINE, true))
+            chart.getAxisLeft().addLimitLine(new LimitLine(target));
 
         if (subid == Sensor.RH_SUBID) {
             chart.getAxisLeft().setAxisMaximum(100f);

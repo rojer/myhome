@@ -33,5 +33,9 @@
             android:enabled="true"
             android:key="show_extremes"
             android:title="Show minimum and maximum" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="show_limit_line"
+            android:title="Show target temperature on graph" />
     </PreferenceCategory>
 </PreferenceScreen>

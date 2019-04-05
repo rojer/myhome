@@ -15,6 +15,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public static final String DATA_URL = "data_url";
     public static final String HUB_URL = "hub_url";
     public static final String SHOW_EXTREMES = "show_extremes";
+    public static final String SHOW_LIMIT_LINE = "show_limit_line";
     public static final String VALUE_UNITS = "value_units";
 
     @Override
