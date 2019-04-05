@@ -27,6 +27,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -172,15 +173,16 @@ public class MainActivity extends AppCompatActivity
                         } catch (NullPointerException npe) {
                             npe.printStackTrace();
                         }
-                        Menu menu = navigationView.getMenu();
-                        for (Sensor sensor : sensors.getList()) {
-                            MainActivity.this.runOnUiThread(() -> {
-                                menu.removeItem(sensor.getSID());
-                                MenuItem menuItem = menu.add(R.id.group_sensors, sensor.getSID(), 0, sensor.getName());
-                                menuItem.setIcon(R.drawable.ic_thermometer_black);
-                                menuItem.setCheckable(true);
-                            });
-                        }
+                        MainActivity.this.runOnUiThread(() -> {
+                            Menu menu = navigationView.getMenu();
+                            menu.removeGroup(R.id.group_sensors);
+                            SubMenu subMenu = menu.addSubMenu(R.id.group_sensors, R.id.group_sensors, 0, R.string.nav_title_sensors);
+                            for (Sensor sensor : sensors.getList()) {
+                                MenuItem item = subMenu.add(R.id.group_sensors, sensor.getSID(), 1, sensor.getName());
+                                item.setIcon(R.drawable.ic_thermometer_black);
+                                item.setCheckable(true);
+                            }
+                        });
                         break;
                     case 637:
                         Map resultSensor = (Map) data.get(Sensor.RESULT);
