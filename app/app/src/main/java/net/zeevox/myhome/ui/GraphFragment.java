@@ -192,7 +192,7 @@ public class GraphFragment extends Fragment {
         long timeFrom = launchSecond - 86400 * (daysBack + 1);
         long timeTo = launchSecond - 86400 * daysBack;
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
-        webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.DATA_URL, "wss://rojer.me/ss/rpc"), new WebSocketListener() {
+        webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.DATA_URL, null), new WebSocketListener() {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 super.onOpen(webSocket, response);

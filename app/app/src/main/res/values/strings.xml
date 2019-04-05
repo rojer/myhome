@@ -67,4 +67,8 @@
 
     <string name="units_celsius">°C</string>
     <string name="units_fahrenheit">°F</string>
+    <string name="dialog_setup_title">Configure your home</string>
+    <string name="dialog_hint_hub_url">Hub LAN URL</string>
+    <string name="dialog_hint_data_url">Historical Data URL</string>
+    <string name="dialog_setup_desc">You can always change these later in settings</string>
 </resources>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/dialog_url_input_title"
+        style="@style/TextAppearance.AppCompat.Light.SearchResult.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dialog_setup_title" />
+
+    <TextView
+        android:id="@+id/dialog_url_input_desc"
+        android:layout_marginTop="16dp"
+        style="@style/TextAppearance.MaterialComponents.Chip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/dialog_url_input_title"
+        android:text="@string/dialog_setup_desc" />
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/text_input_hub_url"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/dialog_url_input_desc"
+        android:layout_marginTop="16dp"
+        android:hint="@string/dialog_hint_hub_url">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/text_edit_hub_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri" />
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/text_input_data_url"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_input_hub_url"
+        android:layout_marginTop="16dp"
+        android:hint="@string/dialog_hint_data_url">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/text_edit_data_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri" />
+    </android.support.design.widget.TextInputLayout>
+
+    <Button
+        android:id="@+id/dialog_button_ok"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_input_data_url"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="16dp"
+        android:text="@android:string/ok" />
+</RelativeLayout>

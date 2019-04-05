@@ -83,9 +83,15 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
-
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if (preferences.getString(SettingsFragment.HUB_URL, null) == null ||
+                preferences.getString(SettingsFragment.DATA_URL, null) == null) {
+            startActivity(new Intent(MainActivity.this, SetupActivity.class));
+            finish();
+        }
+
+        setContentView(R.layout.activity_main);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
@@ -255,7 +261,7 @@ public class MainActivity extends AppCompatActivity
             ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
                 swipeRefreshLayout.setRefreshing(true);
-                webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.HUB_URL, "ws://192.168.1.10/rpc"), webSocketListener);
+                webSocketUtils.connectWebSocket(preferences.getString(SettingsFragment.HUB_URL, null), webSocketListener);
             } else {
                 Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), R.string.error_wifi_not_connected, Snackbar.LENGTH_INDEFINITE);
                 snackbar.setAction(R.string.action_connect, v -> {

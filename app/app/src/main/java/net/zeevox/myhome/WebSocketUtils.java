@@ -14,6 +14,7 @@ public class WebSocketUtils {
     private WebSocket webSocket;
 
     public void connectWebSocket(String url, WebSocketListener webSocketListener) {
+        if (url == null) return;
         Request request = new Request.Builder().url(url).build();
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(1000, TimeUnit.MILLISECONDS).build();

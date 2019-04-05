@@ -5,11 +5,9 @@
             android:enabled="false"
             android:title="@string/prefs_title_use_websocket" />
         <EditTextPreference
-            android:defaultValue="ws://192.168.1.10/rpc"
             android:key="hub_url"
             android:title="@string/prefs_title_hub_url" />
         <EditTextPreference
-            android:defaultValue="wss://rojer.me/ss/rpc"
             android:key="data_url"
             android:title="@string/prefs_title_data_url" />
     </PreferenceCategory>
