@@ -193,7 +193,11 @@ func (mch *mgRPCConnHandler) Handle(ctx context.Context, jsc *mgrpc.Conn, req *m
 }
 
 func rpcHTTPHandler(w http.ResponseWriter, r *http.Request) {
-	var upgrader = websocket.Upgrader{}
+	var upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true // Everyone is welcome
+		},
+	}
 	wsc, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		glog.Errorf("upgrade: %s", err)
