@@ -14,11 +14,11 @@
 
 #define NUM_LIMITS 10
 
-static bool s_enabled = false;
-bool s_heater_on = false;
-double s_deadline = 0;
+static bool s_heater_ctl_on = false;
+static bool s_heater_on = false;
+static double s_deadline = 0;
 
-double s_last_eval, s_last_action_ts;
+static double s_last_eval, s_last_action_ts;
 
 static const char *onoff(bool on) {
   return (on ? "on" : "off");
@@ -98,6 +98,7 @@ static void heater_timer_cb(void *arg) {
   double now = cs_time();
   const struct mgos_config_hub_heater *hcfg =
       &mgos_sys_config_get_hub()->heater;
+  if (!s_heater_ctl_on) return;
   if (s_deadline > 0 && s_deadline < now) {
     LOG(LL_INFO, ("Deadline expired"));
     if (s_heater_on) s_heater_on = false;
@@ -111,7 +112,7 @@ static void heater_timer_cb(void *arg) {
 bool hub_heater_get_status(bool *heater_on, double *last_action_ts) {
   if (heater_on != NULL) *heater_on = s_heater_on;
   if (last_action_ts != NULL) *last_action_ts = s_last_action_ts;
-  return s_enabled;
+  return s_heater_ctl_on;
 }
 
 static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
@@ -133,36 +134,47 @@ static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
 static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
                                    struct mg_rpc_frame_info *fi,
                                    struct mg_str args) {
-  bool heater_on = -1;
+  bool heater_ctl_on = 0, heater_on = 0;
   int duration = -1;
 
-  json_scanf(args.p, args.len, ri->args_fmt, &heater_on, &duration);
+  bool have_ctl = (json_scanf(args.p, args.len, "{heater_ctl_on: %B}", &heater_ctl_on) == 1);
+  bool have_on = (json_scanf(args.p, args.len, "{heater_on: %B}", &heater_on) == 1);
+  json_scanf(args.p, args.len, "{duration: %d}", &duration);
 
-  if (heater_on < 0) {
-    mg_rpc_send_errorf(ri, -1, "heater_on is required");
+  if (!have_ctl && !have_on) {
+    mg_rpc_send_errorf(ri, -1, "heater_on or heater_ctl_on is required");
     goto out;
   }
 
-  if (duration <= 0) {
-    duration = 12 * 3600;
+  if (have_ctl) {
+    if (s_heater_ctl_on != heater_ctl_on) {
+      LOG(LL_INFO, ("Heater ctl %s by request", onoff(heater_ctl_on)));
+      s_heater_ctl_on = heater_ctl_on;
+    }
   }
 
-  if (heater_on != s_heater_on) {
-    LOG(LL_INFO,
-        ("Heater %s by request, duration %d", onoff(heater_on), duration));
-    s_heater_on = heater_on;
-    report_to_server(mgos_sys_config_get_hub_ctl_sid(), HEATER_SUBID, cs_time(),
-                     s_heater_on);
+  if (have_on >= 0) {
+    if (duration <= 0) {
+      duration = 12 * 3600;
+    }
+
+    if (heater_on != s_heater_on) {
+      LOG(LL_INFO,
+          ("Heater %s by request, duration %d", onoff(heater_on), duration));
+      s_heater_on = heater_on;
+      report_to_server(mgos_sys_config_get_hub_ctl_sid(), HEATER_SUBID, cs_time(),
+                       s_heater_on);
+    }
+
+    double now = cs_time();
+    s_deadline = now + duration;
+    s_last_action_ts = now;
   }
 
-  double now = cs_time();
-  s_deadline = now + duration;
-  s_last_action_ts = now;
+  heater_timer_cb(NULL);
 
-  hub_heater_eval();
-
-  mg_rpc_send_responsef(ri, "{heater_on: %B, deadline: %lf}", s_heater_on,
-                        s_deadline);
+  mg_rpc_send_responsef(ri, "{heater_ctl_on: %B, heater_on: %B, deadline: %lf}",
+                        s_heater_ctl_on, s_heater_on, s_deadline);
 
 out:
   (void) cb_arg;
@@ -339,6 +351,23 @@ static void heater_crontab_cb(struct mg_str action, struct mg_str payload,
   (void) action;
 }
 
+static void heater_ctl_crontab_cb(struct mg_str action, struct mg_str payload,
+                              void *userdata) {
+  bool heater_ctl_on = (bool) (intptr_t) userdata;
+
+  if (s_heater_ctl_on == heater_ctl_on) return;
+
+  LOG(LL_INFO, ("Heater control %s by cron", onoff(heater_ctl_on)));
+
+  s_heater_ctl_on = heater_ctl_on;
+
+  // Re-evaluate now.
+  if (s_heater_ctl_on) heater_timer_cb(NULL);
+
+  (void) payload;
+  (void) action;
+}
+
 bool hub_heater_init(void) {
   bool res = false;
   const struct mgos_config_hub_heater *hcfg =
@@ -355,7 +384,7 @@ bool hub_heater_init(void) {
   struct mg_rpc *c = mgos_rpc_get_global();
   mg_rpc_add_handler(c, "Hub.Heater.GetStatus", "",
                      hub_heater_get_status_handler, NULL);
-  mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_on: %B, duration: %d}",
+  mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_ctl_on: %B, heater_on: %B, duration: %d}",
                      hub_heater_set_handler, NULL);
   mg_rpc_add_handler(c, "Hub.Heater.GetLimits", "{sid: %d, subid: %d}",
                      hub_heater_get_limits_handler, NULL);
@@ -369,7 +398,11 @@ bool hub_heater_init(void) {
                                 (void *) 1);
   mgos_crontab_register_handler(mg_mk_str("heater_off"), heater_crontab_cb,
                                 (void *) 0);
-  s_enabled = true;
+  mgos_crontab_register_handler(mg_mk_str("heater_ctl_on"), heater_ctl_crontab_cb,
+                                (void *) 1);
+  mgos_crontab_register_handler(mg_mk_str("heater_ctl_off"), heater_ctl_crontab_cb,
+                                (void *) 0);
+  s_heater_ctl_on = true;
   res = true;
 
 out:

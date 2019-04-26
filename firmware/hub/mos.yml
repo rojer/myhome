@@ -1,10 +1,10 @@
 name: hub
 arch: esp8266
-version: 1.11.1
+version: 1.12.0
 
-#libs_version: 2.11.0
-#modules_version: 2.11.0
-#mongoose_os_version: 2.11.0
+libs_version: 2.13.1
+modules_version: 2.13.1
+mongoose_os_version: 2.13.1
 
 sources:
   - src
