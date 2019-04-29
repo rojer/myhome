@@ -79,10 +79,17 @@ static bool check_thresh(bool heater_is_on,
 static void hub_heater_eval(void) {
   bool want_on = false;
   double now = cs_time();
-  if (s_deadline != 0) return;  // Heater is under manual control.
-  if (now - s_last_eval < 60) return;
-  for (int i = 0; i < NUM_LIMITS; i++) {
-    want_on |= check_thresh(s_heater_on, get_limits(i));
+  if (s_heater_ctl_on) {
+    if (s_deadline > 0 && s_deadline < now) {
+      LOG(LL_INFO, ("Deadline expired"));
+      if (s_heater_on) s_heater_on = false;
+      s_deadline = 0;
+    }
+    if (s_deadline != 0) return;  // Heater is under manual control.
+    if (now - s_last_eval < 60) return;
+    for (int i = 0; i < NUM_LIMITS; i++) {
+      want_on |= check_thresh(s_heater_on, get_limits(i));
+    }
   }
   if (s_heater_on != want_on) {
     LOG(LL_INFO, ("Heater %s -> %s", onoff(s_heater_on), onoff(want_on)));
@@ -95,15 +102,8 @@ static void hub_heater_eval(void) {
 }
 
 static void heater_timer_cb(void *arg) {
-  double now = cs_time();
   const struct mgos_config_hub_heater *hcfg =
       &mgos_sys_config_get_hub()->heater;
-  if (!s_heater_ctl_on) return;
-  if (s_deadline > 0 && s_deadline < now) {
-    LOG(LL_INFO, ("Deadline expired"));
-    if (s_heater_on) s_heater_on = false;
-    s_deadline = 0;
-  }
   hub_heater_eval();
   mgos_gpio_write(hcfg->relay_gpio, s_heater_on);
   (void) arg;
@@ -112,7 +112,7 @@ static void heater_timer_cb(void *arg) {
 bool hub_heater_get_status(bool *heater_on, double *last_action_ts) {
   if (heater_on != NULL) *heater_on = s_heater_on;
   if (last_action_ts != NULL) *last_action_ts = s_last_action_ts;
-  return s_heater_ctl_on;
+  return mgos_sys_config_get_hub_heater_enable();
 }
 
 static void hub_heater_get_status_handler(struct mg_rpc_request_info *ri,
