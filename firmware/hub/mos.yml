@@ -1,10 +1,10 @@
 name: hub
-arch: esp8266
-version: 1.12.1
+arch: esp32
+version: 2.0.0
 
-libs_version: 2.13.1
-modules_version: 2.13.1
-mongoose_os_version: 2.13.1
+libs_version: 2.14.0
+modules_version: 2.14.0
+mongoose_os_version: 2.14.0
 
 sources:
   - src
@@ -13,18 +13,21 @@ filesystem:
 
 config_schema:
   - ["i2c.enable", true]
-  - ["i2c.sda_gpio", 4]
-  - ["i2c.scl_gpio", 5]
+  - ["i2c.sda_gpio", 13]
+  - ["i2c.scl_gpio", 16]
+  - ["provision.led.pin", 12]
+  - ["provision.led.active_high", true]
+  - ["provision.stable_state", 2]
   - ["hub", "o", {"title": "Hub app settings"}]
   - ["hub.light", "o", {"title": "Outdoor lighting settings"}]
   - ["hub.light.enable", "b", false, {"title": "Enable lighting control"}]
   - ["hub.light.thr_lo", "i", 10, {"title": "Threshold for on -> off"}]
   - ["hub.light.thr_hi", "i", 15, {"title": "Threshold for off -> on"}]
-  - ["hub.light.relay_gpio", "i", 14, {"title": "Relay GPIO"}]
+  - ["hub.light.relay_gpio", "i", 32, {"title": "Relay GPIO"}]
   - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
   - ["hub.heater", "o", {"title": "Heater settings"}]
   - ["hub.heater.enable", "b", false, {"title": "Enable heater control"}]
-  - ["hub.heater.relay_gpio", "i", 13, {"title": "Relay GPIO"}]
+  - ["hub.heater.relay_gpio", "i", 33, {"title": "Relay GPIO"}]
   - ["hub.heater.limits", "o", {"title": "Limits"}]
   - ["hub.heater.limits.sid", "i", -1, {"title": "Sensor ID"}]
   - ["hub.heater.limits.subid", "i", 0, {"title": "Sensor sub-ID"}]
@@ -53,6 +56,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/provision
   - origin: https://github.com/mongoose-os-libs/rpc-common
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-service-cron
@@ -60,6 +64,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
   - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/sntp
   - origin: https://github.com/mongoose-os-libs/wifi
