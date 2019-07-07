@@ -1,11 +1,11 @@
 author: mongoose-os
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.1.0
+version: 2.2.0
 
-libs_version: 2.12.1
-modules_version: 2.12.1
-mongoose_os_version: 2.12.1
+libs_version: 2.14.0
+modules_version: 2.14.0
+mongoose_os_version: 2.14.0
 
 sources:
   - src
