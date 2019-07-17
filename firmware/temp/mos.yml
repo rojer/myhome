@@ -1,7 +1,7 @@
 author: mongoose-os
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.2.0
+version: 2.3.0
 
 libs_version: 2.14.0
 modules_version: 2.14.0
@@ -23,6 +23,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/rpc-udp
   - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/si7005
   - origin: https://github.com/mongoose-os-libs/sntp
