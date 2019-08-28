@@ -192,6 +192,10 @@ func (mch *mgRPCConnHandler) Handle(ctx context.Context, jsc *mgrpc.Conn, req *m
 	}
 }
 
+func rootHTTPHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Nothing to see here, please move along.\r\n")
+}
+
 func rpcHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
@@ -227,6 +231,7 @@ func main() {
 	if *sqlConn == "" {
 		glog.Fatalf("--sql-conn not set")
 	}
+	http.HandleFunc("/", rootHTTPHandler)
 	http.HandleFunc("/rpc", rpcHTTPHandler)
 	glog.Infof("Serving at %s", *listenAddr)
 	err := http.ListenAndServe(*listenAddr, nil)
