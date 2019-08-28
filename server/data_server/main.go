@@ -231,8 +231,8 @@ func main() {
 	if *sqlConn == "" {
 		glog.Fatalf("--sql-conn not set")
 	}
-	http.HandleFunc("/", rootHTTPHandler)
 	http.HandleFunc("/rpc", rpcHTTPHandler)
+	http.HandleFunc("/", rootHTTPHandler)
 	glog.Infof("Serving at %s", *listenAddr)
 	err := http.ListenAndServe(*listenAddr, nil)
 	if err != nil {
