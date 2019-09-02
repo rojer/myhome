@@ -82,6 +82,13 @@ bool bme680_probe(int addr) {
 
 static double s_bme680_last_reported = 0;
 
+static const char *bme68_sensor_names[] = {
+    "",   "IAQ",      "Static IAQ",        "CO2",        "VOC",
+    "",   "Raw Temp", "Pressure",          "Raw RH",     "Raw Gas Resistance",
+    "",   "",         "Gas stabilization", "Gas run-in", "Temp",
+    "RH",
+};
+
 static void bme680_output_cb(int ev, void *ev_data, void *arg) {
   const struct mgos_bsec_output *out = (struct mgos_bsec_output *) ev_data;
   float ps_kpa = out->ps.signal / 1000.0f;
@@ -102,16 +109,30 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
   LOG(LL_INFO, ("Reporting"));
   double now = mg_time();
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
+  const char *name = mgos_sys_config_get_sensor_name();
   for (uint8_t i = 0; i < out->num_outputs; i++) {
+    char buf[50];
+    char *sn = buf;
     const bsec_output_t *o = &out->outputs[i];
+    const char *subn = (o->sensor_id < ARRAY_SIZE(bme68_sensor_names)
+                            ? bme68_sensor_names[o->sensor_id]
+                            : "");
+    mg_asprintf(&sn, sizeof(buf), "%s%s%s", (name ? name : ""),
+                (name ? " " : ""), subn);
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
-                 &opts, "{sid: %d, subid: %d, ts: %f, v: %.2f}", sid,
-                 o->sensor_id, now, o->signal);
+                 &opts, "{sid: %d, subid: %d, name: %Q, ts: %f, v: %.2f}", sid,
+                 o->sensor_id, sn, now, o->signal);
     if (o->sensor_id == BSEC_OUTPUT_IAQ) {
+      if (sn != buf) free(sn);
+      sn = buf;
+      subn = "IAQ accuracy";
+      mg_asprintf(&sn, sizeof(buf), "%s%s%s", (name ? name : ""),
+                  (name ? " " : ""), subn);
       mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
-                   &opts, "{sid: %d, subid: %d, ts: %f, v: %d}", sid,
-                   o->sensor_id + 100, now, o->accuracy);
+                   &opts, "{sid: %d, subid: %d, name: %Q, ts: %f, v: %d}", sid,
+                   o->sensor_id + 100, sn, now, o->accuracy);
     }
+    if (sn != buf) free(sn);
   }
   s_bme680_last_reported = mgos_uptime();
   (void) ev;
