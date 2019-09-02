@@ -1,5 +1,7 @@
 #include "hub.h"
 
+#include <math.h>
+
 #include "mgos.h"
 #include "mgos_rpc.h"
 #include "mgos_sys_config.h"
@@ -53,7 +55,8 @@ void hub_add_data(const struct sensor_data *sd) {
   if (sd->name != NULL) {
     sde->sd.name = strdup(sd->name);
   }
-  LOG(LL_INFO, ("New data: %d/%d %.3lf", sd->sid, sd->subid, sd->value));
+  LOG(LL_INFO, ("New data: %d/%d (%s) %.3lf", sd->sid, sd->subid,
+                (sd->name ? sd->name : ""), sd->value));
   report_to_server_sd(sd);
 }
 
@@ -114,10 +117,52 @@ static void hub_data_list_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   (void) fi;
 }
 
+static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg, struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
+  int sid = -1, subid = 0;
+  char *name = NULL;
+  double ts = 0, value = FP_NAN;
+  json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid, &name, &ts, &value);
+
+  if (sid < 0) {
+    mg_rpc_send_errorf(ri, -1, "invalid sid %d/%d", sid, subid);
+    goto out;
+  }
+  if (isnan(value)) {
+    mg_rpc_send_errorf(ri, -2, "value is required");
+    goto out;
+  }
+  if (ts <= 0) {
+    ts = mg_time();
+  }
+
+  struct sensor_data sd = {
+      .sid = sid,
+      .subid = subid,
+      .ts = ts,
+      .value = value,
+      .name = name,
+  };
+
+  hub_add_data(&sd);
+
+  mg_rpc_send_responsef(ri, NULL);
+
+out:
+  free(name);
+
+  (void) cb_arg;
+  (void) fi;
+}
+
 bool hub_data_init(void) {
   struct mg_rpc *c = mgos_rpc_get_global();
   mg_rpc_add_handler(c, "Hub.Data.List", "", hub_data_list_handler, NULL);
   mg_rpc_add_handler(c, "Hub.Data.Get", "{sid: %d, subid: %d}",
                      hub_data_get_handler, NULL);
+  mg_rpc_add_handler(c, "Sensor.Data",
+                     "{sid: %d, subid: %d, name: %Q, ts: %lf, v: %lf}",
+                     hub_sensor_data_handler, NULL);
   return true;
 }

@@ -137,8 +137,10 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   bool heater_ctl_on = 0, heater_on = 0;
   int duration = -1;
 
-  bool have_ctl = (json_scanf(args.p, args.len, "{heater_ctl_on: %B}", &heater_ctl_on) == 1);
-  bool have_on = (json_scanf(args.p, args.len, "{heater_on: %B}", &heater_on) == 1);
+  bool have_ctl = (json_scanf(args.p, args.len, "{heater_ctl_on: %B}",
+                              &heater_ctl_on) == 1);
+  bool have_on =
+      (json_scanf(args.p, args.len, "{heater_on: %B}", &heater_on) == 1);
   json_scanf(args.p, args.len, "{duration: %d}", &duration);
 
   if (!have_ctl && !have_on) {
@@ -162,8 +164,8 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
       LOG(LL_INFO,
           ("Heater %s by request, duration %d", onoff(heater_on), duration));
       s_heater_on = heater_on;
-      report_to_server(mgos_sys_config_get_hub_ctl_sid(), HEATER_SUBID, cs_time(),
-                       s_heater_on);
+      report_to_server(mgos_sys_config_get_hub_ctl_sid(), HEATER_SUBID,
+                       cs_time(), s_heater_on);
     }
 
     double now = cs_time();
@@ -352,7 +354,7 @@ static void heater_crontab_cb(struct mg_str action, struct mg_str payload,
 }
 
 static void heater_ctl_crontab_cb(struct mg_str action, struct mg_str payload,
-                              void *userdata) {
+                                  void *userdata) {
   bool heater_ctl_on = (bool) (intptr_t) userdata;
 
   if (s_heater_ctl_on == heater_ctl_on) return;
@@ -384,7 +386,8 @@ bool hub_heater_init(void) {
   struct mg_rpc *c = mgos_rpc_get_global();
   mg_rpc_add_handler(c, "Hub.Heater.GetStatus", "",
                      hub_heater_get_status_handler, NULL);
-  mg_rpc_add_handler(c, "Hub.Heater.Set", "{heater_ctl_on: %B, heater_on: %B, duration: %d}",
+  mg_rpc_add_handler(c, "Hub.Heater.Set",
+                     "{heater_ctl_on: %B, heater_on: %B, duration: %d}",
                      hub_heater_set_handler, NULL);
   mg_rpc_add_handler(c, "Hub.Heater.GetLimits", "{sid: %d, subid: %d}",
                      hub_heater_get_limits_handler, NULL);
@@ -398,10 +401,10 @@ bool hub_heater_init(void) {
                                 (void *) 1);
   mgos_crontab_register_handler(mg_mk_str("heater_off"), heater_crontab_cb,
                                 (void *) 0);
-  mgos_crontab_register_handler(mg_mk_str("heater_ctl_on"), heater_ctl_crontab_cb,
-                                (void *) 1);
-  mgos_crontab_register_handler(mg_mk_str("heater_ctl_off"), heater_ctl_crontab_cb,
-                                (void *) 0);
+  mgos_crontab_register_handler(mg_mk_str("heater_ctl_on"),
+                                heater_ctl_crontab_cb, (void *) 1);
+  mgos_crontab_register_handler(mg_mk_str("heater_ctl_off"),
+                                heater_ctl_crontab_cb, (void *) 0);
   s_heater_ctl_on = true;
   res = true;
 
