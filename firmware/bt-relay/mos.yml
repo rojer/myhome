@@ -1,0 +1,38 @@
+author: mongoose-os
+platform: esp32
+description: BT -> TCP relay
+version: 1.0.0
+
+#libs_version: 2.12.1
+#modules_version: 2.12.1
+#mongoose_os_version: 2.12.1
+
+sources:
+  - src
+filesystem:
+  - fs
+libs:
+  - origin: https://github.com/mongoose-os-libs/bt-common
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/rpc-udp
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+config_schema:
+  - ["bt.enable", true]
+  - ["bt.adv_enable", false]
+  - ["bt.keep_enabled", true]
+  - ["wifi.ap.enable", false]
+  - ["ttl", "i", 120, {title: "If not seen for this long, remove"}]
+  - ["report_on_change", "b", true, {title: "Report if data changes"}]
+  - ["report_interval", "i", 60, {title: "Report at this interval"}]
+  - ["hub_address", "s", "", {title: "Relay to this address"}]
+
+manifest_version: 2017-06-29

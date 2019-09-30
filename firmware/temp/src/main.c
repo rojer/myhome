@@ -1,12 +1,15 @@
 #include "mgos.h"
 
 #include "mgos_bme680.h"
+#include "mgos_lolin_button.h"
 #include "mgos_rpc.h"
 
 #include "bme680.h"
 #include "ds18b20.h"
 #include "sht3x.h"
 #include "si7005.h"
+
+#include "ssd1306.h"
 
 #define INVALID_VALUE -1000.0
 
@@ -101,10 +104,26 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
     LOG(LL_INFO, ("T %.2f RH %.2f P %.2f kPa (%.2f mmHg)", out->temp.signal,
                   out->rh.signal, ps_kpa, ps_mmhg));
   }
-  if (mgos_uptime() - s_bme680_last_reported < mgos_sys_config_get_interval())
+
+  struct mgos_ssd1306 *oled = mgos_ssd1306_get_global();
+  if (oled != NULL) {
+    mgos_ssd1306_printf_color(oled, 0, 0, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK,  "SID:%d", mgos_sys_config_get_sensor_id());
+    mgos_ssd1306_printf_color(oled, 0, 9, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK,  "T:  %.2f", out->temp.signal);
+    mgos_ssd1306_printf_color(oled, 0, 18, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "RH: %.2f", out->rh.signal);
+    if (out->iaq.accuracy == 3) {
+      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "IAQ:%.2f", out->iaq.signal);
+    } else {
+      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "IAQ:?(%d)", out->iaq.accuracy);
+    }
+    mgos_ssd1306_refresh(oled, false /* force */);
+  }
+
+  if (mgos_uptime() - s_bme680_last_reported < mgos_sys_config_get_interval()) {
     return;
+  }
   int sid = mgos_sys_config_get_sensor_id();
   const char *hub_addr = mgos_sys_config_get_hub_address();
+
   if (sid < 0) return;
   LOG(LL_INFO, ("Reporting"));
   double now = mg_time();
@@ -137,6 +156,41 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
   s_bme680_last_reported = mgos_uptime();
   (void) ev;
   (void) arg;
+}
+
+static void lolin_button_handler(int ev, void *ev_data, void *userdata) {
+  const struct mgos_lolin_button_status *bs = (const struct mgos_lolin_button_status *) ev_data;
+  const char *bn = NULL;
+  switch (ev) {
+    case MGOS_EV_LOLIN_BUTTON_A:
+      bn = "A";
+      break;
+    case MGOS_EV_LOLIN_BUTTON_B:
+      bn = "B";
+      break;
+    default:
+      return;
+  }
+  const char *sn = NULL;
+  switch (bs->state) {
+    case MGOS_LOLIN_BUTTON_RELEASE:
+      sn = "released";
+      break;
+    case MGOS_LOLIN_BUTTON_PRESS:
+      sn = "pressed";
+      break;
+    case MGOS_LOLIN_BUTTON_DOUBLE_PRESS:
+      sn = "double-pressed";
+      break;
+    case MGOS_LOLIN_BUTTON_LONG_PRESS:
+      sn = "long-pressed";
+      break;
+    case MGOS_LOLIN_BUTTON_HOLD:
+      sn = "held";
+      break;
+  }
+  LOG(LL_INFO, ("Button %s %s", bn, sn));
+  (void) userdata;
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
@@ -208,5 +262,10 @@ enum mgos_app_init_result mgos_app_init(void) {
     mgos_gpio_set_button_handler(BTN_GPIO, MGOS_GPIO_PULL_UP,
                                  MGOS_GPIO_INT_EDGE_NEG, 20, btn_cb, NULL);
   }
+  struct mgos_ssd1306 *oled = mgos_ssd1306_get_global();
+  mgos_ssd1306_start(oled);
+  mgos_ssd1306_clear(oled);
+  mgos_ssd1306_refresh(oled, true /* force */);
+  mgos_event_add_group_handler(MGOS_EV_LOLIN_BUTTON_BASE, lolin_button_handler, NULL);
   return MGOS_APP_INIT_SUCCESS;
 }

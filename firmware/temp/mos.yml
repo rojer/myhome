@@ -1,11 +1,11 @@
 author: mongoose-os
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.5.1
+version: 2.6.0
 
-libs_version: 2.15.0
-modules_version: 2.15.0
-mongoose_os_version: 2.15.0
+#libs_version: 2.15.0
+#modules_version: 2.15.0
+#mongoose_os_version: 2.15.0
 
 sources:
   - src
@@ -16,6 +16,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/bme680
     version: latest  # Released after 2.15
   - origin: https://github.com/mongoose-os-libs/i2c
+  - origin: https://github.com/mongoose-os-libs/lolin-button
   - origin: https://github.com/mongoose-os-libs/ota-http-client
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/provision
@@ -28,6 +29,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-udp
     version: 86568f661d1b88e3c79d7281327f618cf48b65ae  # 2.15 + reconnect fix.
   - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/ssd1306
   - origin: https://github.com/mongoose-os-libs/si7005
   - origin: https://github.com/mongoose-os-libs/sntp
   - origin: https://github.com/mongoose-os-libs/wifi
@@ -37,6 +39,11 @@ config_schema:
   - ["i2c.enable", true]
   - ["i2c.sda_gpio", 12]
   - ["i2c.scl_gpio", 14]
+  - ["ssd1306.enable", false]
+  - ["ssd1306.width", 64]
+  - ["ssd1306.height", 48]
+  - ["ssd1306.col_offset", 32]
+  - ["ssd1306.i2c.enable", false]  # Use system bus.
   - ["ow_gpio", "i", 13, {title: "OneWire bus GPIO"}]
   - ["sensor_type", "s", "", {title: "Sensor type"}]
   - ["sensor_id", "i", -1, {title: "Sensor ID"}]

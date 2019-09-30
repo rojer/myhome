@@ -1,10 +1,10 @@
 name: hub
 arch: esp32
-version: 2.4.0
+version: 2.5.0
 
-libs_version: 2.15.0
-modules_version: 2.15.0
-mongoose_os_version: 2.15.0
+libs_version: latest
+modules_version: latest
+mongoose_os_version: latest
 
 sources:
   - src
