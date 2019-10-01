@@ -27,7 +27,8 @@ from bluepy import btle
 #      bit 6: ??? set to 1 on first power on (byte entire value 0x40)
 #      bit 7: ???
 #   1: state:
-#      bits 0-3: 0 - idle, 1 - moving, 2 - ???, 3 - error, 4, 5 - ???, 6 - adap, 7 - inst, 8 - ???, 0xe - ??? (first power on, date entry)
+#      bits 0-2: 0 - idle, 1 - moving, 2 - ???, 3 - error, 4, 5 - ???, 6 - adap, 7 - inst, 8 - ???, 0xe - ??? (first power on, date entry)
+#      bit 3: low battery
 #      bits 4-7: ??? - 0xc when first powered on and date is not set
 #   2: ???, values seen: 0, 8
 # 0x003f 0xb'32 39 28 29 28 04 0a' b'29()(\x04\n'
@@ -64,8 +65,9 @@ from bluepy import btle
 
 class XavaxRadiator(btle.Peripheral):
 
-    MODE_AUTO = 0
-    MODE_MANUAL = 1
+    FLAG_MODE = 1 << 0
+    FLAG_LOCK = 1 << 7
+
     STATE_IDLE = 0
     STATE_MOVING = 1
     STATE_ERROR = 3
@@ -87,8 +89,11 @@ class XavaxRadiator(btle.Peripheral):
     def unlock(self):
         self.writeCharacteristic(0x0047, bytes([0, 0, 0, 0]))
 
-    def set_mode(self, mode):  # 0 - auto, 1 - manual
-        self.writeCharacteristic(0x003d, bytes([mode, 0, 0]))
+    def set_mode(self, manual, lock):
+        flags = 0
+        if manual: flags |= self.FLAG_MODE
+        if lock: flags |= self.FLAG_LOCK
+        self.writeCharacteristic(0x003d, bytes([flags, 0, 0]))
 
     def set_target_temp(self, temp):
         v = list(self.readCharacteristic(0x003f))
@@ -104,7 +109,7 @@ class XavaxRadiator(btle.Peripheral):
         v41 = self.readCharacteristic(0x0041)
         print("%02x %02x %02x" % (v3d[0], v3d[1], v3d[2]))
         return {
-            "mode": (self.MODE_AUTO if v3d[0] & 1 == 0 else self.MODE_MANUAL),
+            "mode": v3d[0] & 1,
             "state": int(v3d[1]) & 0xf,
             "amb_temp": (v3f[0] * 0.5 if v3f[0] != 0 else None),
             "tgt_temp": (v3f[1] * 0.5),
@@ -147,13 +152,13 @@ class XavaxRadiator(btle.Peripheral):
     @classmethod
     def get_state_name(cls, sn):
         if sn == 0xff: return "n/a"
-        sn &= 0xf
+        sn &= 0x7
         name = cls.STATE_NAMES.get(sn)
         return name if name is not None else "?(%#x)" % sn
 
     def set_manual_on(self, on):
+        self.set_mode(True, True)
         tt = XavaxRadiator.TEMP_SET_ON if on else XavaxRadiator.TEMP_SET_OFF
-        self.set_mode(XavaxRadiator.MODE_MANUAL)
         self.set_target_temp(tt)
 
 
@@ -181,7 +186,7 @@ class ScanDelegate(btle.DefaultDelegate):
             return
         status_data = data.getValueText(0xff)
         sd = binascii.unhexlify(status_data)
-        t, tt, bpct, mode, state = sd[:5]
+        t, tt, bpct, flags, state = sd[:5]
         ts = ("%2.1f" % (t * 0.5)) if t != 0 and t != 0xff else "n/a"
         if tt == 0 or tt == 0xff:
             tts = "n/a"
@@ -191,26 +196,28 @@ class ScanDelegate(btle.DefaultDelegate):
             tts = "ON"
         else:
             tts = ("%2.1f" % (tt * 0.5))
-        bpcts = ("%2d%%" % bpct) if bpct != 0 and bpct != 0xff else "n/a"
-        if mode != 0xff:
-            ms = ("M" if mode & 1 == 1 else "A")
+        bpcts = ("%2d%%" % bpct) if bpct != 0 and bpct <= 100 else "n/a"
+        if flags != 0xff:
+            fs = ""
+            fs += ("L" if flags & 0x80 == 0x80 else ".")
+            fs += ("M" if flags & 1 == 1 else "A")
         else:
-            ms = "n/a"
+            fs = "n/a"
         sts = XavaxRadiator.get_state_name(state)
         act, acts = None, ""
         want_on = self._get_desired_state(data.addr)
         can_control = (sts == "idle" and t != 0 and t != 0xff and tt != 0 and tt != 0xff)
         if want_on is not None and can_control:
             is_on = t < tt
-            if want_on != is_on or ms != "M" or tt * 0.5 not in (XavaxRadiator.TEMP_SET_OFF, XavaxRadiator.TEMP_SET_ON):
+            if want_on != is_on or flags & 0x81 != 0x81 or tt * 0.5 not in (XavaxRadiator.TEMP_SET_OFF, XavaxRadiator.TEMP_SET_ON):
                 act = (data.addr, want_on)
                 acts = " want %s" % ("ON" if want_on else "OFF")
                 if act not in self._actions:
                     self._actions.append(act)
 
-        print("%s (%-20s), status %4s (T %s TT %4s batt %s mode %s state %s)%s" % (
+        print("%s (%-20s), status %4s [T %s TT %4s batt %s flags %s(%#02x) state %s(%#02x)]%s" % (
             data.addr, self.get_name(data.addr), status_data,
-            ts, tts, bpcts, ms, sts, acts))
+            ts, tts, bpcts, fs, flags, sts, state, acts))
 
     def get_actions(self):
         return self._actions

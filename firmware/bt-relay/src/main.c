@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "mgos.h"
 
 #include "common/queue.h"
@@ -54,9 +56,9 @@ static bool parse_asensor_data(struct mg_str adv_data,
 }
 
 struct xavax_data {
-  int8_t temp;
-  int8_t tgt_temp;
-  int8_t batt_pct;
+  uint8_t temp;
+  uint8_t tgt_temp;
+  uint8_t batt_pct;
   uint8_t mode;
   uint8_t state;
   uint8_t unknown_ff;
@@ -64,10 +66,19 @@ struct xavax_data {
 } __attribute__((packed));
 
 struct xavax_state {
-  float temp;
-  float tgt_temp;
-  int8_t batt_pct;
+  uint8_t temp;
+  uint8_t tgt_temp;
+  uint8_t batt_pct;
   uint8_t state;
+  union {
+    struct {
+      uint8_t temp : 1;
+      uint8_t tgt_temp : 1;
+      uint8_t batt_pct : 1;
+      uint8_t state : 1;
+    };
+    uint8_t value;
+  } changed;
 };
 
 static struct mgos_bt_uuid xavax_svc_uuid;
@@ -118,55 +129,72 @@ static struct sensor_state *find_sensor_state(const struct mgos_bt_addr *addr) {
   return NULL;
 }
 
+static float xavax_conv_temp(uint8_t t) {
+  if (t == 0xff) return NAN;
+  return (t * 0.5);
+}
+
 static void report_sensor(struct sensor_state *ss) {
   char addr[MGOS_BT_ADDR_STR_LEN];
   const char *hub_addr = mgos_sys_config_get_hub_address();
-  if (hub_addr != NULL) {
-    struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
-    switch (ss->type) {
-      case BT_SENSOR_NONE:
-        break;
-      case BT_SENSOR_ASENSOR: {
-        struct asensor_state *as = &ss->asensor;
-        LOG(LL_INFO,
-            ("Reporting ASensor %s RSSI %d SID %d ts %lf T %d m %d batt %d",
-             mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi, ss->sid,
-             ss->last_seen_ts, as->temp, as->moving, as->batt_pct));
+  if (hub_addr == NULL) return;
+  int age = (int) (mgos_uptime() - ss->last_seen_uts);
+  struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
+  switch (ss->type) {
+    case BT_SENSOR_NONE:
+      break;
+    case BT_SENSOR_ASENSOR: {
+      struct asensor_state *as = &ss->asensor;
+      LOG(LL_INFO, ("Reporting %s RSSI %d SID %d t %d age %3d "
+                    "T %d m %d batt %d",
+                    mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi, ss->sid,
+                    age, ss->type, as->temp, as->moving, as->batt_pct));
+      mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+                   &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}", ss->sid, 0,
+                   ss->last_seen_ts, as->temp);
+      mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+                   &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}", ss->sid, 1,
+                   ss->last_seen_ts, as->moving);
+      mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+                   &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}", ss->sid, 2,
+                   ss->last_seen_ts, as->batt_pct);
+      break;
+    }
+    case BT_SENSOR_XAVAX: {
+      struct xavax_state *xs = &ss->xavax;
+      float temp = xavax_conv_temp(xs->temp);
+      float tgt_temp = xavax_conv_temp(xs->tgt_temp);
+      LOG(LL_INFO,
+          ("Reporting %s RSSI %d SID %d t %d age %3d "
+           "T %.1lf TT %.1lf batt %d%% state 0x%02x chg %#x",
+           mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi, ss->sid, ss->type,
+           age, temp, tgt_temp, xs->batt_pct, xs->state, xs->changed.value));
+      if (xs->temp != 0 && xs->temp != 0xff && xs->changed.temp) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
-                     NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
-                     ss->sid, 0, ss->last_seen_ts, as->temp);
-        mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
-                     NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
-                     ss->sid, 1, ss->last_seen_ts, as->moving);
-        mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
-                     NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
-                     ss->sid, 2, ss->last_seen_ts, as->batt_pct);
-        break;
+                     NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
+                     ss->sid, 0, ss->last_seen_ts, temp);
       }
-      case BT_SENSOR_XAVAX: {
-        struct xavax_state *xs = &ss->xavax;
-        LOG(LL_INFO, ("Reporting Xavax %s RSSI %d SID %d ts %lf "
-                      "T %.1lf TT %.1lf batt %d%% state 0x%02x",
-                      mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi,
-                      ss->sid, ss->last_seen_ts, xs->temp, xs->tgt_temp,
-                      xs->batt_pct, xs->state));
+      if (xs->tgt_temp != 0 && xs->tgt_temp != 0xff && xs->changed.temp) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
-                     ss->sid, 0, ss->last_seen_ts, xs->temp);
-        mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
-                     NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
-                     ss->sid, 1, ss->last_seen_ts, xs->tgt_temp);
+                     ss->sid, 1, ss->last_seen_ts, tgt_temp);
+      }
+      // Not only battery percentage can be 0 or 0xff for "unknown" but it can
+      // sometimes can get non-sensical values like 224 (0xe0).
+      if (xs->batt_pct != 0 && xs->batt_pct <= 100) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
                      ss->sid, 2, ss->last_seen_ts, xs->batt_pct);
+      }
+      if (xs->changed.state) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
                      ss->sid, 4, ss->last_seen_ts, xs->state);
-        break;
       }
+      xs->changed.value = 0;
+      break;
     }
   }
-  ss->last_reported_uts = mgos_uptime();
 }
 
 static void gap_handler(int ev, void *ev_data, void *userdata) {
@@ -214,7 +242,7 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
                    (ss->addr.addr[4] << 8) | ss->addr.addr[5]);
         LOG(LL_INFO,
             ("New sensor %s type %d sid %d",
-             mgos_bt_addr_to_str(&r->addr, 0, addr), ss->type, ss->sid));
+             mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->type, ss->sid));
         SLIST_INSERT_HEAD(&s_sensors, ss, next);
         changed = true;
       }
@@ -225,39 +253,36 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
         case BT_SENSOR_ASENSOR: {
           struct asensor_data *ad = &sd.asensor;
           struct asensor_state *as = &ss->asensor;
-          if (as->temp != ad->temp) {
-            as->temp = ad->temp;
-            changed = true;
-          }
+          // Don't trigger on temperature and battery percentage changes
+          // because they tend to flap a lot.
+          as->temp = ad->temp;
+          as->batt_pct = ad->batt_pct;
           if (as->moving != ad->moving) {
             as->moving = ad->moving;
             changed = true;
           }
-          as->batt_pct = ad->batt_pct;
           break;
         }
         case BT_SENSOR_XAVAX: {
           struct xavax_data *xd = &sd.xavax;
           struct xavax_state *xs = &ss->xavax;
-          if (xd->temp != 0 && xd->temp != -1) {
-            float temp = xd->temp * 0.5f;
-            if (temp != xs->temp) {
-              xs->temp = temp;
-              changed = true;
-            }
+          if (xs->temp != xd->temp) {
+            xs->temp = xd->temp;
+            xs->changed.temp = true;
           }
-          if (xd->tgt_temp != 0 && xd->tgt_temp != -1) {
-            float tgt_temp = xd->tgt_temp * 0.5f;
-            if (tgt_temp != xs->tgt_temp) {
-              xs->tgt_temp = tgt_temp;
-              changed = true;
-            }
+          if (xs->tgt_temp != xd->tgt_temp) {
+            xs->tgt_temp = xd->tgt_temp;
+            xs->changed.tgt_temp = true;
           }
-          if (xd->state != 0 && xd->state != 0xff) {
+          if (xs->state != xd->state) {
             xs->state = xd->state;
-            changed = true;
+            xs->changed.state = true;
           }
-          xs->batt_pct = xd->batt_pct;
+          if (xs->batt_pct != xd->batt_pct) {
+            xs->batt_pct = xd->batt_pct;
+            xs->changed.batt_pct = true;
+          }
+          changed = (xs->changed.value != 0);
           break;
         }
       }
@@ -282,10 +307,17 @@ static void timer_cb(void *arg) {
   struct sensor_state *ss, *sst;
   SLIST_FOREACH_SAFE(ss, &s_sensors, next, sst) {
     if (now - ss->last_seen_uts > mgos_sys_config_get_ttl()) {
+      char addr[MGOS_BT_ADDR_STR_LEN];
+      LOG(LL_INFO,
+          ("Removed sensor %s type %d sid %d",
+           mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->type, ss->sid));
       SLIST_REMOVE(&s_sensors, ss, sensor_state, next);
     } else if (now - ss->last_reported_uts >
                mgos_sys_config_get_report_interval()) {
+      // Force reporting of everything.
+      if (ss->type == BT_SENSOR_XAVAX) ss->xavax.changed.value = 0xff;
       report_sensor(ss);
+      ss->last_reported_uts = mgos_uptime();
     }
   }
   start_scan();
