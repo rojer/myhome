@@ -172,8 +172,8 @@ static void report_sensor(struct sensor_state *ss) {
            "data %02x%02x%02x%02x%02x%02x%02x%02x",
            mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi, ss->sid, ss->type,
            age, temp, tgt_temp, xs->batt_pct, xs->state, xs->changed.value,
-           xs->data[0], xs->data[1], xs->data[2], xs->data[3],
-           xs->data[4], xs->data[5], xs->data[6], xs->data[7]));
+           xs->data[0], xs->data[1], xs->data[2], xs->data[3], xs->data[4],
+           xs->data[5], xs->data[6], xs->data[7]));
       if (xs->temp != 0 && xs->temp != 0xff && xs->changed.temp) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
@@ -273,17 +273,19 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
           struct xavax_state *xs = &ss->xavax;
           // Sometimes bogus values are reported for temperatures.
           //  1. Current gets value of target, target gets some random value:
-          //     T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
-          //     T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
+          //   T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
+          //   T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
           //  2. Target gets some random value. The value is the same as
           //     in (1) but doesn't seem to be related to anything.
-          // So, of the temperature suddenly becomes equal to target, we ignore it.
+          // So if temperature suddenly becomes equal to target, we ignore it.
           if (xs->temp != xd->temp) {
             if (xd->temp == xs->tgt_temp &&
                 abs(((int) xd->temp) - ((int) xs->temp)) >= 4) {
               float temp = xavax_conv_temp(xd->temp);
               float tgt_temp = xavax_conv_temp(xd->tgt_temp);
-              LOG(LL_INFO, ("Ignored bogus temperature report (%.2f %.2f)", temp, tgt_temp));
+              LOG(LL_INFO,
+                  ("%s: Ignored bogus temperature report (%.2f %.2f)",
+                   mgos_bt_addr_to_str(&ss->addr, 0, addr), temp, tgt_temp));
               // We remember the bogus value so we can detect (2).
               xs->bogus_tgt_temp = xd->tgt_temp;
             } else {
@@ -298,7 +300,9 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
             } else {
               float temp = xavax_conv_temp(xd->temp);
               float tgt_temp = xavax_conv_temp(xd->tgt_temp);
-              LOG(LL_INFO, ("Ignored bogus tgt temp report (%.2f %.2f)", temp, tgt_temp));
+              LOG(LL_INFO,
+                  ("%s: Ignored bogus tgt temp report (%.2f %.2f)",
+                   mgos_bt_addr_to_str(&ss->addr, 0, addr), temp, tgt_temp));
             }
           }
           if (xs->state != xd->state) {
