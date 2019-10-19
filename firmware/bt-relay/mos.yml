@@ -1,7 +1,7 @@
 author: mongoose-os
 platform: esp32
 description: BT -> TCP relay
-version: 1.0.1
+version: 1.0.2
 
 #libs_version: 2.12.1
 #modules_version: 2.12.1
@@ -13,6 +13,7 @@ filesystem:
   - fs
 libs:
   - origin: https://github.com/mongoose-os-libs/bt-common
+  - origin: https://github.com/mongoose-os-libs/dns-sd
   - origin: https://github.com/mongoose-os-libs/ota-http-client
   - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/rpc-common
@@ -29,6 +30,8 @@ config_schema:
   - ["bt.enable", true]
   - ["bt.adv_enable", false]
   - ["bt.keep_enabled", true]
+  - ["dns_sd.enable", true]
+  - ["dns_sd.host_name", ""]
   - ["wifi.ap.enable", false]
   - ["ttl", "i", 120, {title: "If not seen for this long, remove"}]
   - ["report_on_change", "b", true, {title: "Report if data changes"}]
