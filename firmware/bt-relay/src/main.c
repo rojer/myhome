@@ -21,7 +21,7 @@ static void start_scan(void) {
   if (s_scanning) return;
   LOG(LL_DEBUG, ("Starting scan"));
   struct mgos_bt_gap_scan_opts opts = {
-      .duration_ms = 5000,
+      .duration_ms = 1500,
       .active = false,
   };
   s_scanning = mgos_bt_gap_scan(&opts);
@@ -68,6 +68,7 @@ struct xavax_data {
 struct xavax_state {
   uint8_t temp;
   uint8_t tgt_temp;
+  uint8_t bogus_tgt_temp;
   uint8_t batt_pct;
   uint8_t state;
   union {
@@ -79,6 +80,7 @@ struct xavax_state {
     };
     uint8_t value;
   } changed;
+  uint8_t data[8];
 };
 
 static struct mgos_bt_uuid xavax_svc_uuid;
@@ -166,9 +168,12 @@ static void report_sensor(struct sensor_state *ss) {
       float tgt_temp = xavax_conv_temp(xs->tgt_temp);
       LOG(LL_INFO,
           ("Reporting %s RSSI %d SID %d t %d age %3d "
-           "T %.1lf TT %.1lf batt %d%% state 0x%02x chg %#x",
+           "T %.1lf TT %.1lf batt %d%% state 0x%02x chg %#x "
+           "data %02x%02x%02x%02x%02x%02x%02x%02x",
            mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->rssi, ss->sid, ss->type,
-           age, temp, tgt_temp, xs->batt_pct, xs->state, xs->changed.value));
+           age, temp, tgt_temp, xs->batt_pct, xs->state, xs->changed.value,
+           xs->data[0], xs->data[1], xs->data[2], xs->data[3],
+           xs->data[4], xs->data[5], xs->data[6], xs->data[7]));
       if (xs->temp != 0 && xs->temp != 0xff && xs->changed.temp) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
@@ -266,23 +271,47 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
         case BT_SENSOR_XAVAX: {
           struct xavax_data *xd = &sd.xavax;
           struct xavax_state *xs = &ss->xavax;
+          // Sometimes bogus values are reported for temperatures.
+          //  1. Current gets value of target, target gets some random value:
+          //     T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
+          //     T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
+          //  2. Target gets some random value. The value is the same as
+          //     in (1) but doesn't seem to be related to anything.
+          // So, of the temperature suddenly becomes equal to target, we ignore it.
           if (xs->temp != xd->temp) {
-            xs->temp = xd->temp;
-            xs->changed.temp = true;
+            if (xd->temp == xs->tgt_temp &&
+                abs(((int) xd->temp) - ((int) xs->temp)) >= 4) {
+              float temp = xavax_conv_temp(xd->temp);
+              float tgt_temp = xavax_conv_temp(xd->tgt_temp);
+              LOG(LL_INFO, ("Ignored bogus temperature report (%.2f %.2f)", temp, tgt_temp));
+              // We remember the bogus value so we can detect (2).
+              xs->bogus_tgt_temp = xd->tgt_temp;
+            } else {
+              xs->temp = xd->temp;
+              xs->changed.temp = true;
+            }
           }
           if (xs->tgt_temp != xd->tgt_temp) {
-            xs->tgt_temp = xd->tgt_temp;
-            xs->changed.tgt_temp = true;
+            if (xd->tgt_temp != xs->bogus_tgt_temp) {
+              xs->tgt_temp = xd->tgt_temp;
+              xs->changed.tgt_temp = true;
+            } else {
+              float temp = xavax_conv_temp(xd->temp);
+              float tgt_temp = xavax_conv_temp(xd->tgt_temp);
+              LOG(LL_INFO, ("Ignored bogus tgt temp report (%.2f %.2f)", temp, tgt_temp));
+            }
           }
           if (xs->state != xd->state) {
             xs->state = xd->state;
             xs->changed.state = true;
           }
-          if (xs->batt_pct != xd->batt_pct) {
+          // Battery percentage can be bogus sometimes.
+          if (xs->batt_pct != xd->batt_pct && xd->batt_pct <= 100) {
             xs->batt_pct = xd->batt_pct;
             xs->changed.batt_pct = true;
           }
           changed = (xs->changed.value != 0);
+          memcpy(xs->data, xd, sizeof(xs->data));
           break;
         }
       }
@@ -329,7 +358,7 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   mgos_event_add_group_handler(MGOS_BT_GAP_EVENT_BASE, gap_handler, NULL);
 
-  mgos_set_timer(1000, MGOS_TIMER_REPEAT, timer_cb, NULL);
+  mgos_set_timer(2000, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
   start_scan();
 
