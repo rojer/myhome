@@ -28,7 +28,7 @@ type SensorData struct {
 	Value     float64 `json:"v"`
 }
 
-func sensorDataHandler(peer string, params json.RawMessage, db *sql.DB) {
+func addDataHandler(peer string, params json.RawMessage, db *sql.DB) {
 	var sd SensorData
 	if err := json.Unmarshal(params, &sd); err != nil {
 		glog.Errorf("%s: invalid sensor data: %s", peer, params)
@@ -169,8 +169,10 @@ func (mch *mgRPCConnHandler) Handle(ctx context.Context, jsc *mgrpc.Conn, req *m
 	switch req.Method {
 	case "Sensor.ReportTemp":
 		reportTempHandler(mch.peer, *req.Params, mch.db)
-	case "Sensor.Data":
-		sensorDataHandler(mch.peer, *req.Params, mch.db)
+	case "MyHome.Data.Add":
+		fallthrough
+	case "Sensor.Data": // Old name
+		addDataHandler(mch.peer, *req.Params, mch.db)
 	case "Sensor.GetData":
 		resp, err = sensorGetDataHandler(mch.peer, *req.Params, mch.db)
 	default:
