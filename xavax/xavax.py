@@ -22,10 +22,10 @@ from bluepy import btle
 #      bit 1: ???
 #      bit 2: ???
 #      bit 3: ???
-#      bit 4: ??? window function active?
+#      bit 4: 1 - window function active
 #      bit 5: ???
 #      bit 6: ??? set to 1 on first power on (byte entire value 0x40)
-#      bit 7: ???
+#      bit 7: 1 - locked
 #   1: state:
 #      bits 0-2: 0 - idle, 1 - moving, 2 - ???, 3 - error, 4, 5 - ???, 6 - adap, 7 - inst, 8 - ???, 0xe - ??? (first power on, date entry)
 #      bit 3: low battery
@@ -65,7 +65,8 @@ from bluepy import btle
 
 class XavaxRadiator(btle.Peripheral):
 
-    FLAG_MODE = 1 << 0
+    FLAG_MANUAL = 1 << 0
+    FLAG_WINDOW = 1 << 4
     FLAG_LOCK = 1 << 7
 
     STATE_IDLE = 0
@@ -91,7 +92,7 @@ class XavaxRadiator(btle.Peripheral):
 
     def set_mode(self, manual, lock):
         flags = 0
-        if manual: flags |= self.FLAG_MODE
+        if manual: flags |= self.FLAG_MANUAL
         if lock: flags |= self.FLAG_LOCK
         self.writeCharacteristic(0x003d, bytes([flags, 0, 0]))
 
@@ -156,11 +157,17 @@ class XavaxRadiator(btle.Peripheral):
         name = cls.STATE_NAMES.get(sn)
         return name if name is not None else "?(%#x)" % sn
 
-    def set_manual_on(self, on):
-        self.set_mode(True, True)
-        tt = XavaxRadiator.TEMP_SET_ON if on else XavaxRadiator.TEMP_SET_OFF
-        self.set_target_temp(tt)
 
+def _get_temp_str(tt, onoff=False):
+    if tt == 0 or tt == 0xff:
+        tts = "n/a"
+    elif onoff and tt * 0.5 == XavaxRadiator.TEMP_SET_OFF:
+        tts = "OFF"
+    elif onoff and tt * 0.5 == XavaxRadiator.TEMP_SET_ON:
+        tts = "ON"
+    else:
+        tts = ("%2.1f" % (tt * 0.5))
+    return tts
 
 
 class ScanDelegate(btle.DefaultDelegate):
@@ -175,11 +182,10 @@ class ScanDelegate(btle.DefaultDelegate):
         if not e: return ""
         return e.get("name", "")
 
-    def _get_desired_state(self, addr):
+    def _get_target_temp(self, addr):
         e = self._device_map.get(addr)
         if not e: return
-        return e.get("want_on", None)
-
+        return e.get("target_temp", None)
 
     def handleDiscovery(self, data, isNewDev, isNewData):
         if data.getValueText(6) != "47e9ee00-47e9-11e4-8939-164230d1df67":
@@ -187,31 +193,24 @@ class ScanDelegate(btle.DefaultDelegate):
         status_data = data.getValueText(0xff)
         sd = binascii.unhexlify(status_data)
         t, tt, bpct, flags, state = sd[:5]
-        ts = ("%2.1f" % (t * 0.5)) if t != 0 and t != 0xff else "n/a"
-        if tt == 0 or tt == 0xff:
-            tts = "n/a"
-        elif tt * 0.5 == XavaxRadiator.TEMP_SET_OFF:
-            tts = "OFF"
-        elif tt * 0.5 == XavaxRadiator.TEMP_SET_ON:
-            tts = "ON"
-        else:
-            tts = ("%2.1f" % (tt * 0.5))
+        ts = _get_temp_str(t)
+        tts = _get_temp_str(tt, onoff=True)
         bpcts = ("%2d%%" % bpct) if bpct != 0 and bpct <= 100 else "n/a"
         if flags != 0xff:
             fs = ""
-            fs += ("L" if flags & 0x80 == 0x80 else ".")
-            fs += ("M" if flags & 1 == 1 else "A")
+            fs += ("L" if flags & XavaxRadiator.FLAG_LOCK != 0 else ".")
+            fs += ("W" if flags & XavaxRadiator.FLAG_WINDOW != 0 else ".")
+            fs += ("M" if flags & XavaxRadiator.FLAG_MANUAL != 0 else "A")
         else:
             fs = "n/a"
         sts = XavaxRadiator.get_state_name(state)
         act, acts = None, ""
-        want_on = self._get_desired_state(data.addr)
-        can_control = (sts == "idle" and t != 0 and t != 0xff and tt != 0 and tt != 0xff)
-        if want_on is not None and can_control:
-            is_on = t < tt
-            if want_on != is_on or flags & 0x81 != 0x81 or tt * 0.5 not in (XavaxRadiator.TEMP_SET_OFF, XavaxRadiator.TEMP_SET_ON):
-                act = (data.addr, want_on)
-                acts = " want %s" % ("ON" if want_on else "OFF")
+        target_temp = self._get_target_temp(data.addr)
+        can_control = (sts in ("idle", "move", "ERR!") and t != 0 and t != 0xff and tt != 0 and tt != 0xff)
+        if target_temp is not None and can_control:
+            if tt * 0.5 != target_temp or flags & 0x81 != 0x80:
+                act = (data.addr, target_temp)
+                acts = " want %s" % _get_temp_str(target_temp / 0.5)
                 if act not in self._actions:
                     self._actions.append(act)
 
@@ -263,12 +262,13 @@ def main():
         scanner = btle.Scanner().withDelegate(sd)
         devices = scanner.scan(args.time)
         if args.control and sd.get_actions():
-            for addr, want_on in sd.get_actions():
-                print("%s (%s) -> %s" % (addr, sd.get_name(addr), ("ON" if want_on else "OFF")))
+            for addr, target_temp in sd.get_actions():
+                print("%s (%s) -> %s" % (addr, sd.get_name(addr), _get_temp_str(target_temp / 0.5)))
                 try: 
                     r = XavaxRadiator(addr)
                     r.unlock()
-                    r.set_manual_on(want_on)
+                    r.set_mode(False, True)
+                    r.set_target_temp(target_temp)
                     r.disconnect()
                 except Exception as e:
                     print("Failed to control %s: %s" % (addr, e))
