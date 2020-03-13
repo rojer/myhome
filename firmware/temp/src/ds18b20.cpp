@@ -13,7 +13,7 @@ static DallasTemperature *s_dt = nullptr;
 
 extern "C" {
 
-bool ds18b20_probe(void) {
+bool ds18b20_probe(void ) {
   LOG(LL_INFO, ("OneWire bus on %d", mgos_sys_config_get_ow_gpio()));
   s_ow = new OneWire(mgos_sys_config_get_ow_gpio());
   s_dt = new DallasTemperature(s_ow);
@@ -21,7 +21,7 @@ bool ds18b20_probe(void) {
   return true;
 }
 
-void ds18b20_read(float *temp, float *rh) {
+void ds18b20_read(int addr_, float *temp, float *rh) {
   *rh = INVALID_VALUE;
   *temp = INVALID_VALUE;
   int i;
@@ -45,6 +45,7 @@ void ds18b20_read(float *temp, float *rh) {
   if (t > -100) {
     *temp = t;
   }
+  (void) addr_;
 }
 
 }  // extern "C"

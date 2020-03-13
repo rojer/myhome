@@ -13,12 +13,14 @@
 
 #define INVALID_VALUE -1000.0
 
+int s_addr = 0;
 static const char *s_st = NULL;
-static void (*s_read_func)(float *temp, float *rh) = NULL;
+static void (*s_read_func)(int addr, float *temp, float *rh) = NULL;
 
-static void si7005_read(float *temp, float *rh) {
+static void si7005_read(int addr, float *temp, float *rh) {
   *temp = si7005_read_temp();
   *rh = si7005_read_rh();
+  (void) addr;
 }
 
 #define BTN_GPIO 0
@@ -28,7 +30,7 @@ static void read_sensor(void) {
   int sid = mgos_sys_config_get_sensor_id();
   float temp = INVALID_VALUE, rh = INVALID_VALUE;
   mgos_gpio_toggle(LED_GPIO);
-  s_read_func(&temp, &rh);
+  s_read_func(s_addr, &temp, &rh);
   bool have_temp = (temp != INVALID_VALUE);
   bool have_rh = (rh != INVALID_VALUE);
   LOG(LL_INFO, ("SID %d ST %s T %.2f RH %.2f", sid, s_st, temp, rh));
@@ -200,7 +202,7 @@ enum mgos_app_init_result mgos_app_init(void) {
     LOG(LL_ERROR, ("Detecting sensors"));
     if (si7005_probe()) {
       st = "Si7005";
-    } else if (sht3x_probe()) {
+    } else if (sht3x_probe(&s_addr)) {
       st = "SHT3x";
     } else if (bme680_probe(BME680_I2C_ADDR_PRIMARY)) {
       st = "BME680";
@@ -222,8 +224,8 @@ enum mgos_app_init_result mgos_app_init(void) {
       LOG(LL_ERROR, ("Si7005 sensor not found"));
     }
   } else if (strcmp(st, "SHT3x") == 0) {
-    if (sht3x_probe()) {
-      LOG(LL_INFO, ("SHT3x sensor found"));
+    if (sht3x_probe(&s_addr)) {
+      LOG(LL_INFO, ("SHT3x sensor found @ %#02x", s_addr));
       s_read_func = sht3x_read;
     } else {
       LOG(LL_ERROR, ("SHT31 sensor not found"));

@@ -8,8 +8,8 @@ extern "C" {
 
 #define SHT31_INVALID_VALUE -1000.0
 
-bool sht3x_probe(void);
-void sht3x_read(float *temp, float *rh);
+bool sht3x_probe(int *addr);
+void sht3x_read(int addr, float *temp, float *rh);
 
 #ifdef __cplusplus
 }
