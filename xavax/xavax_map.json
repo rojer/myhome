@@ -2,8 +2,8 @@
   "e0:e5:cf:af:ee:98": { "name": "1 Hall left", "target_temp": 32.0 },
   "74:da:ea:b9:29:8d": { "name": "1 Hall right", "target_temp": 4.0 },
   "e0:e5:cf:b0:0d:1c": { "name": "1 Kitchen", "target_temp": 23.5 },
-  "e0:e5:cf:af:fc:7b": { "name": "2 Bedroom", "target_temp": 4.0 },
-  "74:da:ea:b8:f4:f0": { "name": "2 Juna study", "target_temp": 4.0 },
+  "e0:e5:cf:af:fc:7b": { "name": "2 Bedroom", "target_temp": 23.5 },
+  "74:da:ea:b8:f4:f0": { "name": "2 Juna study", "target_temp": 23.5 },
   "e0:e5:cf:b0:0d:07": { "name": "2 Guest bedroom", "target_temp": 4.0 },
   "e0:e5:cf:e4:22:cf": { "name": "2 Study", "target_temp": 23.5 }
 }

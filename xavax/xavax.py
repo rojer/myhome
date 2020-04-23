@@ -208,7 +208,7 @@ class ScanDelegate(btle.DefaultDelegate):
         target_temp = self._get_target_temp(data.addr)
         can_control = (sts in ("idle", "move", "ERR!") and t != 0 and t != 0xff and tt != 0 and tt != 0xff)
         if target_temp is not None and can_control:
-            if tt * 0.5 != target_temp or flags & 0x81 != 0x80:
+            if tt * 0.5 != target_temp or flags & 0x81 != 0x81:
                 act = (data.addr, target_temp)
                 acts = " want %s" % _get_temp_str(target_temp / 0.5)
                 if act not in self._actions:
@@ -267,7 +267,7 @@ def main():
                 try: 
                     r = XavaxRadiator(addr)
                     r.unlock()
-                    r.set_mode(False, True)
+                    r.set_mode(True, True)
                     r.set_target_temp(target_temp)
                     r.disconnect()
                 except Exception as e:
