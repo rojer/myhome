@@ -53,7 +53,7 @@ static const struct mgos_config_hub_heater_limits *get_limits(int idx) {
 static bool check_thresh(bool heater_is_on,
                          const struct mgos_config_hub_heater_limits *ls) {
   bool want_on = false;
-  struct sensor_data sd;
+  struct sensor_data sd = {0};
   if (ls == NULL || !ls->enable) {
     want_on = false;
   } else if (!hub_get_data(ls->sid, ls->subid, &sd)) {
@@ -72,6 +72,22 @@ static bool check_thresh(bool heater_is_on,
     LOG(LL_INFO, ("S%d/%d: Ok (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
                   sd.value, ls->min, ls->max));
     want_on = false;
+  }
+  int gpio = -1;
+  if (ls->enable) {
+    switch (ls->sid) {
+      case 0:
+        gpio = 5;  // Ground floor.
+        break;
+      case 1:
+        gpio = 4;  // Hot water tank.
+        break;
+    }
+  }
+  if (gpio >= 0) {
+    bool val = want_on;  // 1 = inactive = valve open
+    LOG(LL_DEBUG, ("GPIO %d = %d", gpio, val));
+    mgos_gpio_write(gpio, val);
   }
   return want_on;
 }
@@ -405,6 +421,11 @@ bool hub_heater_init(void) {
                                 heater_ctl_crontab_cb, (void *) 1);
   mgos_crontab_register_handler(mg_mk_str("heater_ctl_off"),
                                 heater_ctl_crontab_cb, (void *) 0);
+
+  mgos_gpio_setup_output(4, 1);   // 1: Hot water tank
+  mgos_gpio_setup_output(5, 1);   // 2: Ground floor
+  mgos_gpio_setup_output(17, 1);  // 3: NC
+
   s_heater_ctl_on = true;
   res = true;
 

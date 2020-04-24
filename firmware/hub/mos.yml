@@ -1,6 +1,6 @@
 name: hub
 arch: esp32
-version: 2.5.0
+version: 2.6.0
 
 libs_version: latest
 modules_version: latest
@@ -54,6 +54,7 @@ config_schema:
 libs:
   - origin: https://github.com/mongoose-os-libs/cron
   - origin: https://github.com/mongoose-os-libs/crontab
+  - origin: https://github.com/mongoose-os-libs/dns-sd
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/ota-http-server
