@@ -1,0 +1,41 @@
+author: rojer
+platform: esp8266
+description: PIR sensor firmware
+version: 1.0.0
+
+#libs_version: 2.15.0
+#modules_version: 2.15.0
+#mongoose_os_version: 2.15.0
+
+sources:
+  - src
+filesystem:
+  - fs
+libs:
+  - origin: https://github.com/mongoose-os-libs/dns-sd
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/provision
+  - origin: https://github.com/mongoose-os-libs/rpc-common
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/rpc-udp
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+config_schema:
+  - ["dns_sd.enable", true]
+  - ["dns_sd.host_name", ""]
+  - ["sensor_type", "s", "", {title: "Sensor type"}]
+  - ["sensor_id", "i", -1, {title: "Sensor ID"}]
+  - ["sensor_name", "s", "", {title: "Sensor Name"}]
+  - ["interval", "i", 60, {title: "Reporting interval, seconds"}]
+  - ["hub_address", "s", "", {title: "Report to this address"}]
+  - ["provision.led.pin", 2]
+  - ["provision.led.active_high", false]
+  - ["provision.stable_state", 2]
+
+manifest_version: 2017-06-29
