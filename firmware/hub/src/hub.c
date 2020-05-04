@@ -36,7 +36,7 @@ void report_to_server(int sid, int subid, double ts, double value) {
   report_to_server_sd(&sd);
 }
 
-void hub_add_data(const struct sensor_data *sd) {
+void hub_add_data_internal(const struct sensor_data *sd, bool report) {
   struct sensor_data_entry *sde = NULL;
   if (sd->ts <= 0 || sd->sid < 0) return;
   SLIST_FOREACH(sde, &s_data, next) {
@@ -45,7 +45,9 @@ void hub_add_data(const struct sensor_data *sd) {
   if (sde == NULL) {
     sde = (struct sensor_data_entry *) calloc(1, sizeof(*sde));
     if (sde == NULL) return;
-    LOG(LL_INFO, ("New sensor %d/%d", sd->sid, sd->subid));
+    if (report) {
+      LOG(LL_INFO, ("New sensor %d/%d", sd->sid, sd->subid));
+    }
     SLIST_INSERT_HEAD(&s_data, sde, next);
   } else if (sd->ts <= sde->sd.ts) {
     return;
@@ -55,9 +57,15 @@ void hub_add_data(const struct sensor_data *sd) {
   if (sd->name != NULL) {
     sde->sd.name = strdup(sd->name);
   }
-  LOG(LL_INFO, ("New data: %d/%d (%s) %.3lf", sd->sid, sd->subid,
-                (sd->name ? sd->name : ""), sd->value));
-  report_to_server_sd(sd);
+  if (report) {
+    LOG(LL_INFO, ("New data: %d/%d (%s) %.3lf", sd->sid, sd->subid,
+                  (sd->name ? sd->name : ""), sd->value));
+    report_to_server_sd(sd);
+  }
+}
+
+void hub_add_data(const struct sensor_data *sd) {
+  hub_add_data_internal(sd, true);
 }
 
 bool hub_get_data(int sid, int subid, struct sensor_data *sd) {
@@ -68,6 +76,54 @@ bool hub_get_data(int sid, int subid, struct sensor_data *sd) {
   if (sde == NULL) return false;
   *sd = sde->sd;
   return true;
+}
+
+static void hub_data_save_timer_cb(void *arg) {
+  const char *fn = mgos_sys_config_get_hub_data_file();
+  FILE *fp = fopen(fn, "w");
+  if (fp == NULL) return;
+  int n = 0, n_bytes = 0;
+  struct json_out out = JSON_OUT_FILE(fp);
+  const struct sensor_data_entry *sde;
+  SLIST_FOREACH(sde, &s_data, next) {
+    const struct sensor_data *sd = &sde->sd;
+    n_bytes += json_printf(
+        &out, "{sid: %d, subid: %d, name: %Q, ts: %.3lf, value: %lf}\n",
+        sd->sid, sd->subid, (sd->name ? sd->name : ""), sd->ts, sd->value);
+    n++;
+  }
+  fclose(fp);
+  LOG(LL_INFO, ("Saved %d entries (%d bytes) to %s", n, n_bytes, fn));
+  (void) arg;
+}
+
+static void hub_data_load(const char *fn) {
+  if (fn == NULL) return;
+  FILE *fp = fopen(fn, "r");
+  if (fp == NULL) return;
+  char buf[256];
+  int n = 0;
+  while (fgets(buf, sizeof(buf), fp) != NULL) {
+    struct sensor_data sd = {
+        .sid = -1,
+        .subid = -1,
+        .name = NULL,
+        .ts = 0,
+        .value = 0,
+    };
+    json_scanf(buf, strlen(buf),
+               "{sid: %d, subid: %d, name: %Q, ts: %lf, value: %lf}", &sd.sid,
+               &sd.subid, &sd.name, &sd.ts, &sd.value);
+    if (sd.name != NULL && strlen(sd.name) == 0) {
+      free(sd.name);
+      sd.name = NULL;
+    }
+    hub_add_data(&sd);
+    free(sd.name);
+    n++;
+  }
+  fclose(fp);
+  LOG(LL_INFO, ("Loaded %d entries from %s", n, fn));
 }
 
 static void hub_data_get_handler(struct mg_rpc_request_info *ri, void *cb_arg,
@@ -164,5 +220,10 @@ bool hub_data_init(void) {
   mg_rpc_add_handler(c, "Sensor.Data",
                      "{sid: %d, subid: %d, name: %Q, ts: %lf, v: %lf}",
                      hub_sensor_data_handler, NULL);
+  hub_data_load(mgos_sys_config_get_hub_data_file());
+  if (mgos_sys_config_get_hub_data_save_interval() > 0) {
+    mgos_set_timer(mgos_sys_config_get_hub_data_save_interval() * 1000,
+                   MGOS_TIMER_REPEAT, hub_data_save_timer_cb, NULL);
+  }
   return true;
 }
