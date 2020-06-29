@@ -1,16 +1,16 @@
 #include "hub_heater.h"
 
+#include <time.h>
+
 #include "common/cs_dbg.h"
 #include "common/cs_time.h"
-
+#include "hub.h"
 #include "mgos.h"
 #include "mgos_crontab.h"
 #include "mgos_gpio.h"
 #include "mgos_rpc.h"
 #include "mgos_sys_config.h"
 #include "mgos_timers.h"
-
-#include "hub.h"
 
 #define NUM_LIMITS 10
 
@@ -53,8 +53,23 @@ static const struct mgos_config_hub_heater_limits *get_limits(int idx) {
 static bool check_thresh(bool heater_is_on,
                          const struct mgos_config_hub_heater_limits *ls) {
   bool want_on = false;
+  bool enabled = (ls != NULL && ls->enable);
   struct sensor_data sd = {0};
-  if (ls == NULL || !ls->enable) {
+
+  if (enabled && ls->sid == 0) {
+    struct tm now = {0};
+    struct sensor_data sd = {0};
+    time_t now_ts = mg_time();
+    // Disable during the day when it's warm outside.
+    if (hub_get_data(2, 0, &sd) && localtime_r(&now_ts, &now) != NULL) {
+      if (now.tm_hour > 10 && now.tm_hour < 18 && sd.value > 11.0) {
+        LOG(LL_INFO, ("It's warm, disabling hall heating"));
+        enabled = false;
+      }
+    }
+  }
+
+  if (!enabled) {
     want_on = false;
   } else if (!hub_get_data(ls->sid, ls->subid, &sd)) {
     LOG(LL_INFO, ("S%d/%d: no data yet", ls->sid, ls->subid));
@@ -73,8 +88,9 @@ static bool check_thresh(bool heater_is_on,
                   sd.value, ls->min, ls->max));
     want_on = false;
   }
+
   int gpio = -1;
-  if (ls->enable) {
+  if (ls != NULL) {
     switch (ls->sid) {
       case 0:
         gpio = 5;  // Ground floor.
@@ -89,6 +105,7 @@ static bool check_thresh(bool heater_is_on,
     LOG(LL_DEBUG, ("GPIO %d = %d", gpio, val));
     mgos_gpio_write(gpio, val);
   }
+
   return want_on;
 }
 
