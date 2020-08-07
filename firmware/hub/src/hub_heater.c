@@ -1,5 +1,6 @@
 #include "hub_heater.h"
 
+#include <math.h>
 #include <time.h>
 
 #include "common/cs_dbg.h"
@@ -254,39 +255,34 @@ static void hub_heater_set_limits_handler(struct mg_rpc_request_info *ri,
                                           void *cb_arg,
                                           struct mg_rpc_frame_info *fi,
                                           struct mg_str args) {
-  struct mgos_config_hub_heater_limits nls = {
-      .sid = -1,
-      .subid = -1,
-      .enable = false,
-      .min = 0.0,
-      .max = 0.0,
-  };
+  int8_t enable = -1;
+  int sid = -1, subid = -1;
+  double min = NAN, max = NAN;
 
-  json_scanf(args.p, args.len, ri->args_fmt, &nls.sid, &nls.subid, &nls.enable,
-             &nls.min, &nls.max);
+  json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid, &enable, &min, &max);
 
-  if (nls.sid < 0 || nls.subid < 0) {
+  if (sid < 0 || subid < 0) {
     mg_rpc_send_errorf(ri, -1, "sid and subid are required");
     goto out;
   }
 
   // Try to find an existing entry for this sensor first.
-  const struct mgos_config_hub_heater_limits *ls;
+  struct mgos_config_hub_heater_limits *ls;
   for (int i = 0; i < NUM_LIMITS + 1; i++) {
-    ls = get_limits(i);
-    if (ls != NULL && ls->sid == nls.sid && ls->subid == nls.subid) break;
+    ls = (struct mgos_config_hub_heater_limits *) get_limits(i);
+    if (ls != NULL && ls->sid == sid && ls->subid == subid) break;
   }
   // If not found, find an unused entry.
   if (ls == NULL) {
     for (int i = 0; i < NUM_LIMITS + 1; i++) {
-      ls = get_limits(i);
+      ls = (struct mgos_config_hub_heater_limits *) get_limits(i);
       if (ls != NULL && ls->sid < 0) break;
     }
   }
   // If no unused entries, find a disabled one.
   if (ls == NULL) {
     for (int i = 0; i < NUM_LIMITS + 1; i++) {
-      ls = get_limits(i);
+      ls = (struct mgos_config_hub_heater_limits *) get_limits(i);
       if (ls != NULL && !ls->enable) break;
     }
   }
@@ -295,7 +291,9 @@ static void hub_heater_set_limits_handler(struct mg_rpc_request_info *ri,
     goto out;
   }
 
-  *((struct mgos_config_hub_heater_limits *) ls) = nls;
+  if (enable != -1) ls->enable = enable;
+  if (!isnan(min)) ls->min = min;
+  if (!isnan(max)) ls->max = max;
 
   char *msg = NULL;
   if (!mgos_sys_config_save(&mgos_sys_config, false /* try_once */, &msg)) {
