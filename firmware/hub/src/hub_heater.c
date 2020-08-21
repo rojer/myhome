@@ -13,7 +13,7 @@
 #include "mgos_sys_config.h"
 #include "mgos_timers.h"
 
-#define NUM_LIMITS 10
+#define NUM_LIMITS 20
 
 static bool s_heater_ctl_on = false;
 static bool s_heater_on = false;
@@ -47,6 +47,26 @@ static const struct mgos_config_hub_heater_limits *get_limits(int idx) {
       return mgos_sys_config_get_hub_heater_limits8();
     case 9:
       return mgos_sys_config_get_hub_heater_limits9();
+    case 10:
+      return mgos_sys_config_get_hub_heater_limits10();
+    case 11:
+      return mgos_sys_config_get_hub_heater_limits11();
+    case 12:
+      return mgos_sys_config_get_hub_heater_limits12();
+    case 13:
+      return mgos_sys_config_get_hub_heater_limits13();
+    case 14:
+      return mgos_sys_config_get_hub_heater_limits14();
+    case 15:
+      return mgos_sys_config_get_hub_heater_limits15();
+    case 16:
+      return mgos_sys_config_get_hub_heater_limits16();
+    case 17:
+      return mgos_sys_config_get_hub_heater_limits17();
+    case 18:
+      return mgos_sys_config_get_hub_heater_limits18();
+    case 19:
+      return mgos_sys_config_get_hub_heater_limits19();
   }
   return NULL;
 }
