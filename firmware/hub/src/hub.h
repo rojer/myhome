@@ -2,10 +2,13 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LIGHT_SID 50
 
 #define LIGHTS_SUBID 0
-#define HEATER_SUBID 1
 
 #define UPTIME_SUBID 0
 #define HEAP_FREE_SUBID 1
@@ -27,3 +30,7 @@ void hub_add_data(const struct sensor_data *sd);
 bool hub_get_data(int sid, int subid, struct sensor_data *sd);
 
 bool hub_data_init(void);
+
+#ifdef __cplusplus
+}
+#endif

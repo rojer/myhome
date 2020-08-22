@@ -1,6 +1,6 @@
 name: hub
-arch: esp32
-version: 2.7.0
+platform: esp32
+version: 2.8.0
 
 libs_version: latest
 modules_version: latest
@@ -12,7 +12,6 @@ filesystem:
   - fs
 
 config_schema:
-  - ["i2c.enable", true]
   - ["i2c.sda_gpio", 13]
   - ["i2c.scl_gpio", 16]
   - ["provision.led.pin", 12]
@@ -26,42 +25,56 @@ config_schema:
   - ["hub.light.thr_hi", "i", 15, {"title": "Threshold for off -> on"}]
   - ["hub.light.relay_gpio", "i", 32, {"title": "Relay GPIO"}]
   - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
-  - ["hub.heater", "o", {"title": "Heater settings"}]
-  - ["hub.heater.enable", "b", false, {"title": "Enable heater control"}]
-  - ["hub.heater.relay_gpio", "i", 33, {"title": "Relay GPIO"}]
-  - ["hub.heater.limits", "o", {"title": "Limits"}]
-  - ["hub.heater.limits.sid", "i", -1, {"title": "Sensor ID"}]
-  - ["hub.heater.limits.subid", "i", 0, {"title": "Sensor sub-ID"}]
-  - ["hub.heater.limits.enable", "b", false, {"title": "Enable this entry"}]
-  - ["hub.heater.limits.min", "d", 0.0, {"title": "Min threshold"}]
-  - ["hub.heater.limits.max", "d", 0.0, {"title": "Max threshold"}]
-  - ["hub.heater.limits1", "hub.heater.limits", {"title": "Limits 1"}]
-  - ["hub.heater.limits2", "hub.heater.limits", {"title": "Limits 2"}]
-  - ["hub.heater.limits3", "hub.heater.limits", {"title": "Limits 3"}]
-  - ["hub.heater.limits4", "hub.heater.limits", {"title": "Limits 4"}]
-  - ["hub.heater.limits5", "hub.heater.limits", {"title": "Limits 5"}]
-  - ["hub.heater.limits6", "hub.heater.limits", {"title": "Limits 6"}]
-  - ["hub.heater.limits7", "hub.heater.limits", {"title": "Limits 7"}]
-  - ["hub.heater.limits8", "hub.heater.limits", {"title": "Limits 8"}]
-  - ["hub.heater.limits9", "hub.heater.limits", {"title": "Limits 9"}]
-  - ["hub.heater.limits10", "hub.heater.limits", {"title": "Limits 10"}]
-  - ["hub.heater.limits11", "hub.heater.limits", {"title": "Limits 11"}]
-  - ["hub.heater.limits12", "hub.heater.limits", {"title": "Limits 12"}]
-  - ["hub.heater.limits13", "hub.heater.limits", {"title": "Limits 13"}]
-  - ["hub.heater.limits14", "hub.heater.limits", {"title": "Limits 14"}]
-  - ["hub.heater.limits15", "hub.heater.limits", {"title": "Limits 15"}]
-  - ["hub.heater.limits16", "hub.heater.limits", {"title": "Limits 16"}]
-  - ["hub.heater.limits17", "hub.heater.limits", {"title": "Limits 17"}]
-  - ["hub.heater.limits18", "hub.heater.limits", {"title": "Limits 18"}]
-  - ["hub.heater.limits19", "hub.heater.limits", {"title": "Limits 19"}]
-  - ["hub.heater.s1.max", "d", 60.0, {"title": "Temperature threshold for sensor 1"}]
+  - ["hub.control", "o", {"title": "Heater settings"}]
+  - ["hub.control.enable", "b", false, {"title": "Enable control logic"}]
+  - ["hub.control.eval_interval", "i", 60, {"title": "Evaluation interval"}]
+  - ["hub.control.limit", "o", {"title": "Limit 0"}]
+  - ["hub.control.limit.sid", "i", -1, {"title": "Sensor ID"}]
+  - ["hub.control.limit.subid", "i", 0, {"title": "Sensor sub-ID"}]
+  - ["hub.control.limit.enable", "b", false, {"title": "Enable this entry"}]
+  - ["hub.control.limit.min", "d", 0.0, {"title": "Min threshold"}]
+  - ["hub.control.limit.max", "d", 0.0, {"title": "Max threshold"}]
+  - ["hub.control.limit.out", "s", "0", {"title": "Output(s) that this limit controls"}]
+  - ["hub.control.limit1", "hub.control.limit", {"title": "Limits 1"}]
+  - ["hub.control.limit2", "hub.control.limit", {"title": "Limits 2"}]
+  - ["hub.control.limit3", "hub.control.limit", {"title": "Limits 3"}]
+  - ["hub.control.limit4", "hub.control.limit", {"title": "Limits 4"}]
+  - ["hub.control.limit5", "hub.control.limit", {"title": "Limits 5"}]
+  - ["hub.control.limit6", "hub.control.limit", {"title": "Limits 6"}]
+  - ["hub.control.limit7", "hub.control.limit", {"title": "Limits 7"}]
+  - ["hub.control.limit8", "hub.control.limit", {"title": "Limits 8"}]
+  - ["hub.control.limit9", "hub.control.limit", {"title": "Limits 9"}]
+  - ["hub.control.limit10", "hub.control.limit", {"title": "Limits 10"}]
+  - ["hub.control.limit11", "hub.control.limit", {"title": "Limits 11"}]
+  - ["hub.control.limit12", "hub.control.limit", {"title": "Limits 12"}]
+  - ["hub.control.limit13", "hub.control.limit", {"title": "Limits 13"}]
+  - ["hub.control.limit14", "hub.control.limit", {"title": "Limits 14"}]
+  - ["hub.control.limit15", "hub.control.limit", {"title": "Limits 15"}]
+  - ["hub.control.limit16", "hub.control.limit", {"title": "Limits 16"}]
+  - ["hub.control.limit17", "hub.control.limit", {"title": "Limits 17"}]
+  - ["hub.control.limit18", "hub.control.limit", {"title": "Limits 18"}]
+  - ["hub.control.limit19", "hub.control.limit", {"title": "Limits 19"}]
+  - ["hub.control.output", "o", {"title": "Output 0"}]
+  - ["hub.control.output.id", "i", -1, {"title": "Output ID"}]
+  - ["hub.control.output.name", "s", "", {"title": "Name"}]
+  - ["hub.control.output.pin", "i", -1, {"title": "Pin"}]
+  - ["hub.control.output.act", "i", 1, {"title": "Pin active state"}]
+  - ["hub.control.output1", "hub.control.output", {"title": "Output 1"}]
+  - ["hub.control.output2", "hub.control.output", {"title": "Output 2"}]
+  - ["hub.control.output3", "hub.control.output", {"title": "Output 3"}]
+  - ["hub.control.output4", "hub.control.output", {"title": "Output 4"}]
+  - ["hub.control.output5", "hub.control.output", {"title": "Output 5"}]
+  - ["hub.control.output6", "hub.control.output", {"title": "Output 6"}]
+  - ["hub.control.output7", "hub.control.output", {"title": "Output 7"}]
+  - ["hub.control.output8", "hub.control.output", {"title": "Output 8"}]
+  - ["hub.control.output9", "hub.control.output", {"title": "Output 9"}]
   - ["hub.status_led_gpio", "i", 2, {"title": "Status LED GPIO"}]
   - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
   - ["hub.data_file", "s", "hub_data.json", {"title": "File to store sensor data in"}]
   - ["hub.data_save_interval", "i", 60, {"title": "Save data at this interval"}]
   - ["hub.data_server_addr", "s", "wss://rojer.me/ss/rpc", {"title": "RPC address of the data server (if enabled)"}]
-  - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-server id"}]
-  - ["hub.sys_sid", "i", 200, {"title": "Control values pseudo-server id"}]
+  - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-sensor id"}]
+  - ["hub.sys_sid", "i", 200, {"title": "System values pseudo-sensor id"}]
 
 build_vars:
   MGOS_ROOT_FS_TYPE: LFS
@@ -72,7 +85,6 @@ libs:
   - origin: https://github.com/mongoose-os-libs/dns-sd
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/i2c
-  - origin: https://github.com/mongoose-os-libs/ota-http-server
   - origin: https://github.com/mongoose-os-libs/provision
   - origin: https://github.com/mongoose-os-libs/rpc-common
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
@@ -80,11 +92,24 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-fs
   - origin: https://github.com/mongoose-os-libs/rpc-service-gpio
   - origin: https://github.com/mongoose-os-libs/rpc-service-i2c
-  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/rpc-uart
   - origin: https://github.com/mongoose-os-libs/rpc-udp
   - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/sntp
-  - origin: https://github.com/mongoose-os-libs/wifi
+
+conds:
+  - when: mos.platform != "ubuntu"
+    apply:
+      libs:
+        - origin: https://github.com/mongoose-os-libs/ota-http-server
+        - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+        - origin: https://github.com/mongoose-os-libs/wifi
+      config_schema:
+        - ["i2c.enable", true]
+
+cdefs:
+  # Workaround for https://github.com/espressif/esp-idf/issues/1445
+  # std::to_string() in particular.
+  _GLIBCXX_USE_C99: 1
 
 manifest_version: 2017-06-29
