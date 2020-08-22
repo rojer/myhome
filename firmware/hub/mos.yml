@@ -1,6 +1,6 @@
 name: hub
 platform: esp32
-version: 2.8.0
+version: 2.9.0
 
 libs_version: latest
 modules_version: latest
@@ -72,7 +72,7 @@ config_schema:
   - ["hub.status_interval", "i", 60, {"title": "Status LED GPIO"}]
   - ["hub.data_file", "s", "hub_data.json", {"title": "File to store sensor data in"}]
   - ["hub.data_save_interval", "i", 60, {"title": "Save data at this interval"}]
-  - ["hub.data_server_addr", "s", "wss://rojer.me/ss/rpc", {"title": "RPC address of the data server (if enabled)"}]
+  - ["hub.data_server_addr", "s", "", {"title": "RPC address of the data server (if enabled)"}]
   - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-sensor id"}]
   - ["hub.sys_sid", "i", 200, {"title": "System values pseudo-sensor id"}]
 

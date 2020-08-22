@@ -173,13 +173,14 @@ static void hub_data_list_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   (void) fi;
 }
 
-static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
-                                    void *cb_arg, struct mg_rpc_frame_info *fi,
-                                    struct mg_str args) {
+static bool parse_data_point(struct mg_rpc_request_info *ri, struct mg_str s,
+                             double default_ts) {
+  bool res = false;
   int sid = -1, subid = 0;
   char *name = NULL;
-  double ts = 0, value = FP_NAN;
-  json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid, &name, &ts, &value);
+  double ts = NAN, value = NAN;
+  json_scanf(s.p, s.len, "{sid: %d, subid: %d, name: %Q, ts: %lf, v: %lf}",
+             &sid, &subid, &name, &ts, &value);
 
   if (sid < 0) {
     mg_rpc_send_errorf(ri, -1, "invalid sid %d/%d", sid, subid);
@@ -189,8 +190,12 @@ static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
     mg_rpc_send_errorf(ri, -2, "value is required");
     goto out;
   }
-  if (ts <= 0) {
-    ts = mg_time();
+  if (isnan(ts)) {
+    if (default_ts > 0) {
+      ts = default_ts;
+    } else {
+      ts = mg_time();
+    }
   }
 
   struct sensor_data sd = {
@@ -203,11 +208,50 @@ static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
 
   hub_add_data(&sd);
 
-  mg_rpc_send_responsef(ri, NULL);
+  res = true;
 
 out:
   free(name);
+  return res;
+}
 
+static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg, struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
+  if (parse_data_point(ri, args, 0)) {
+    goto out;  // Error already sent.
+  }
+
+  mg_rpc_send_responsef(ri, NULL);
+
+out:
+  (void) cb_arg;
+  (void) fi;
+}
+
+static void hub_sensor_data_multi_handler(struct mg_rpc_request_info *ri,
+                                          void *cb_arg,
+                                          struct mg_rpc_frame_info *fi,
+                                          struct mg_str args) {
+  double default_ts = 0;
+  struct json_token data = JSON_INVALID_TOKEN;
+  json_scanf(args.p, args.len, ri->args_fmt, &default_ts, &data);
+  if (data.type != JSON_TYPE_ARRAY_END) {
+    mg_rpc_send_errorf(ri, -3, "data is required and must be an array");
+    goto out;
+  }
+
+  struct json_token t;
+  for (int i = 0; json_scanf_array_elem(data.ptr, data.len, "", i, &t) > 0;
+       i++) {
+    if (!parse_data_point(ri, mg_mk_str_n(t.ptr, t.len), default_ts)) {
+      goto out;  // Error already sent.
+    }
+  }
+
+  mg_rpc_send_responsef(ri, NULL);
+
+out:
   (void) cb_arg;
   (void) fi;
 }
@@ -274,6 +318,8 @@ bool hub_data_init(void) {
   mg_rpc_add_handler(c, "Sensor.Data",
                      "{sid: %d, subid: %d, name: %Q, ts: %lf, v: %lf}",
                      hub_sensor_data_handler, NULL);
+  mg_rpc_add_handler(c, "Sensor.DataMulti", "{ts: %lf, data: %T}",
+                     hub_sensor_data_multi_handler, NULL);
   hub_data_load(mgos_sys_config_get_hub_data_file());
   if (mgos_sys_config_get_hub_data_save_interval() > 0) {
     mgos_set_timer(mgos_sys_config_get_hub_data_save_interval() * 1000,
