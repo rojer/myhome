@@ -1,10 +1,13 @@
 {
-  "e0:e5:cf:af:ee:98": { "name": "1 Hall left",     "sid": 28307096, "target_temp": 32.0 },
-  "74:da:ea:b9:29:8d": { "name": "1 Hall right",    "sid": 28898544, "target_temp": 4.0 },
-  "e0:e5:cf:b0:0d:1c": { "name": "1 Kitchen",       "sid": 28314908, "target_temp": 23.0 },
-  "e0:e5:cf:b0:16:be": { "name": "1 Living Room",   "sid": 28317374, "target_temp": 23.0 },
-  "e0:e5:cf:af:fc:7b": { "name": "2 Bedroom",       "sid": 28310651, "target_temp": 23.0 },
-  "74:da:ea:b8:f4:f0": { "name": "2 Juna study",    "sid": 28912013, "target_temp": 23.0 },
-  "e0:e5:cf:b0:0d:07": { "name": "2 Guest bedroom", "sid": 28314887, "target_temp": 20.0 },
-  "e0:e5:cf:e4:22:cf": { "name": "2 Study",         "sid": 31728335, "target_temp": 21.0 }
+  "e0:e5:cf:af:ee:98": { "name": "1 Hall left",     "sid": 28307096, "target_temp": 32 },
+  "74:da:ea:b9:29:8d": { "name": "1 Hall right",    "sid": 28898544, "target_temp": 13 },
+  "e0:e5:cf:b0:0d:1c": { "name": "1 Kitchen",       "sid": 28314908, "target_temp": 23 },
+  "e0:e5:cf:b0:00:15": { "name": "1 Dining Room",   "sid": 28311573, "target_temp": 13 },
+  "e0:e5:cf:b0:16:be": { "name": "1 Living Room",   "sid": 28317374, "target_temp": 23 },
+  "e0:e5:cf:af:fc:40": { "name": "1 Bedroom 1",     "sid": 28310592, "target_temp": 13 },
+  "e0:e5:cf:b0:0d:61": { "name": "1 Bathroom 1",    "sid": 28314977, "target_temp": 23 },
+  "e0:e5:cf:af:fc:7b": { "name": "2 Bedroom M",     "sid": 28310651, "target_temp": 23 },
+  "74:da:ea:b8:f4:f0": { "name": "2 Juna study",    "sid": 28912013, "target_temp": 23 },
+  "e0:e5:cf:b0:0d:07": { "name": "2 Guest bedroom", "sid": 28314887, "target_temp": 13 },
+  "e0:e5:cf:e4:22:cf": { "name": "2 Man Cave",      "sid": 31728335, "target_temp": 21 }
 }
