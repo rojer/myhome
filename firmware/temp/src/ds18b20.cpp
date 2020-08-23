@@ -13,7 +13,7 @@ static DallasTemperature *s_dt = nullptr;
 
 extern "C" {
 
-bool ds18b20_probe(void ) {
+bool ds18b20_probe(void) {
   LOG(LL_INFO, ("OneWire bus on %d", mgos_sys_config_get_ow_gpio()));
   s_ow = new OneWire(mgos_sys_config_get_ow_gpio());
   s_dt = new DallasTemperature(s_ow);

@@ -39,22 +39,34 @@ static void read_sensor(void) {
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
   double now = mg_time();
   const char *name = mgos_sys_config_get_sensor_name();
+  char buf1[50], buf2[50];
+  char *name_temp = buf1, *name_rh = buf2;
+  mg_asprintf(&name_temp, sizeof(buf1), "%s%sTemp", (name ? name : ""),
+              (name ? " " : ""));
+  mg_asprintf(&name_rh, sizeof(buf2), "%s%sRH", (name ? name : ""),
+              (name ? " " : ""));
   if (name == NULL) name = "";
   if (have_temp && have_rh) {
-    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
+    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.DataMulti"), NULL,
                  NULL, &opts,
-                 "{sid: %d, st: %Q, name: %Q, ts: %lf, temp: %lf, rh: %lf}",
-                 sid, s_st, name, now, temp, rh);
+                 "{ts: %.3f, data: ["
+                 "{sid: %d, subid: %d, st: %Q, name: %Q, v: %.3f}, "
+                 "{sid: %d, subid: %d, st: %Q, name: %Q, v: %.3f}]}",
+                 now, sid, 0, s_st, name_temp, temp, sid, 1, s_st, name_rh, rh);
   } else if (have_temp) {
-    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
-                 NULL, &opts, "{sid: %d, st: %Q, name: %Q, ts: %lf, temp: %lf}",
-                 sid, s_st, name, now, temp);
+    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+                 &opts,
+                 "{sid: %d, subid: %d, st: %Q, name: %Q, ts: %f, v: %.3f}", sid,
+                 0, s_st, name_temp, now, temp);
   } else if (have_rh) {
-    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.ReportTemp"), NULL,
-                 NULL, &opts, "{sid: %d, st: %Q, name: %Q, ts: %lf, rh: %lf}",
-                 sid, s_st, name, now, rh);
+    mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+                 &opts,
+                 "{sid: %d, subid: %d, st: %Q, name: %Q, ts: %f, v: %.3f}", sid,
+                 0, s_st, name_rh, now, rh);
   }
   mgos_gpio_toggle(LED_GPIO);
+  if (name_temp != buf1) free(name_temp);
+  if (name_rh != buf2) free(name_rh);
 }
 
 static void sensor_timer_cb(void *arg) {
@@ -109,13 +121,22 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
 
   struct mgos_ssd1306 *oled = mgos_ssd1306_get_global();
   if (oled != NULL) {
-    mgos_ssd1306_printf_color(oled, 0, 0, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK,  "SID:%d", mgos_sys_config_get_sensor_id());
-    mgos_ssd1306_printf_color(oled, 0, 9, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK,  "T:  %.2f", out->temp.signal);
-    mgos_ssd1306_printf_color(oled, 0, 18, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "RH: %.2f", out->rh.signal);
+    mgos_ssd1306_printf_color(oled, 0, 0, SSD1306_COLOR_WHITE,
+                              SSD1306_COLOR_BLACK, "SID:%d",
+                              mgos_sys_config_get_sensor_id());
+    mgos_ssd1306_printf_color(oled, 0, 9, SSD1306_COLOR_WHITE,
+                              SSD1306_COLOR_BLACK, "T:  %.2f",
+                              out->temp.signal);
+    mgos_ssd1306_printf_color(oled, 0, 18, SSD1306_COLOR_WHITE,
+                              SSD1306_COLOR_BLACK, "RH: %.2f", out->rh.signal);
     if (out->iaq.accuracy == 3) {
-      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "IAQ:%.2f", out->iaq.signal);
+      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE,
+                                SSD1306_COLOR_BLACK, "IAQ:%.2f",
+                                out->iaq.signal);
     } else {
-      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE, SSD1306_COLOR_BLACK, "IAQ:?(%d)", out->iaq.accuracy);
+      mgos_ssd1306_printf_color(oled, 0, 27, SSD1306_COLOR_WHITE,
+                                SSD1306_COLOR_BLACK, "IAQ:?(%d)",
+                                out->iaq.accuracy);
     }
     mgos_ssd1306_refresh(oled, false /* force */);
   }
@@ -161,7 +182,8 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
 }
 
 static void lolin_button_handler(int ev, void *ev_data, void *userdata) {
-  const struct mgos_lolin_button_status *bs = (const struct mgos_lolin_button_status *) ev_data;
+  const struct mgos_lolin_button_status *bs =
+      (const struct mgos_lolin_button_status *) ev_data;
   const char *bn = NULL;
   switch (ev) {
     case MGOS_EV_LOLIN_BUTTON_A:
@@ -268,6 +290,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_ssd1306_start(oled);
   mgos_ssd1306_clear(oled);
   mgos_ssd1306_refresh(oled, true /* force */);
-  mgos_event_add_group_handler(MGOS_EV_LOLIN_BUTTON_BASE, lolin_button_handler, NULL);
+  mgos_event_add_group_handler(MGOS_EV_LOLIN_BUTTON_BASE, lolin_button_handler,
+                               NULL);
   return MGOS_APP_INIT_SUCCESS;
 }

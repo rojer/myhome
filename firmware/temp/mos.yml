@@ -1,11 +1,11 @@
-author: mongoose-os
+author: rojer
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.7.0
+version: 2.8.0
 
-#libs_version: 2.15.0
-#modules_version: 2.15.0
-#mongoose_os_version: 2.15.0
+libs_version: latest
+modules_version: latest
+mongoose_os_version: latest
 
 sources:
   - src
@@ -15,7 +15,6 @@ libs:
   - origin: https://github.com/mongoose-os-libs/arduino-dallas-temperature
   - origin: https://github.com/mongoose-os-libs/dns-sd
   - origin: https://github.com/mongoose-os-libs/bme680
-    version: latest  # Released after 2.15
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/lolin-button
   - origin: https://github.com/mongoose-os-libs/ota-http-client
@@ -28,7 +27,6 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/rpc-uart
   - origin: https://github.com/mongoose-os-libs/rpc-udp
-    version: 86568f661d1b88e3c79d7281327f618cf48b65ae  # 2.15 + reconnect fix.
   - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/ssd1306
   - origin: https://github.com/mongoose-os-libs/si7005

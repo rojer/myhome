@@ -35,7 +35,8 @@ static bool sht3x_probe_addr(int addr) {
     return false;
   }
   if (calc_crc8(resp, 2) != resp[2]) {
-    LOG(LL_INFO, ("%#02x: Invalid CRC (%02x %02x %02x)", addr, resp[0], resp[1], resp[2]));
+    LOG(LL_INFO, ("%#02x: Invalid CRC (%02x %02x %02x)", addr, resp[0], resp[1],
+                  resp[2]));
     return false;
   }
   LOG(LL_INFO, ("%#02x: Sensor status: 0x%02x%02x", addr, resp[0], resp[1]));
