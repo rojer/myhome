@@ -256,60 +256,6 @@ out:
   (void) fi;
 }
 
-static void sensor_report_temp_handler(struct mg_rpc_request_info *ri,
-                                       void *cb_arg,
-                                       struct mg_rpc_frame_info *fi,
-                                       struct mg_str args) {
-  int sid = -1;
-  char *name = NULL;
-  double ts = -1, temp = -1000, rh = -1000;
-
-  json_scanf(args.p, args.len, ri->args_fmt, &sid, &name, &ts, &temp, &rh);
-
-  const char *sn = (name != NULL ? name : "");
-  if (rh > 0) {
-    LOG(LL_INFO, ("sid: %d, name: %s, ts: %lf, temp: %lf, rh: %lf", sid, sn, ts,
-                  temp, rh));
-  } else {
-    LOG(LL_INFO, ("sid: %d, name: %s, ts: %lf, temp: %lf", sid, sn, ts, temp));
-  }
-
-  if (sid < 0) goto out;
-
-  if (temp > -300) {
-    char buf[100] = {0};
-    if (name != NULL) {
-      snprintf(buf, sizeof(buf), "%s Temp", name);
-    }
-    struct sensor_data sd0 = {};
-    sd0.sid = sid;
-    sd0.subid = 0;
-    sd0.ts = ts;
-    sd0.value = temp;
-    sd0.name = (name != NULL ? buf : NULL);
-    hub_add_data(&sd0);
-  }
-  if (rh >= 0) {
-    char buf[100] = {0};
-    if (name != NULL) {
-      snprintf(buf, sizeof(buf), "%s RH", name);
-    }
-    struct sensor_data sd0 = {};
-    sd0.sid = sid;
-    sd0.subid = 1;
-    sd0.ts = ts;
-    sd0.value = rh;
-    sd0.name = (name != NULL ? buf : NULL);
-    hub_add_data(&sd0);
-  }
-
-out:
-  mg_rpc_send_responsef(ri, NULL);
-  free(name);
-  (void) cb_arg;
-  (void) fi;
-}
-
 bool hub_data_init(void) {
   struct mg_rpc *c = mgos_rpc_get_global();
   mg_rpc_add_handler(c, "Hub.Data.List", "", hub_data_list_handler, NULL);
@@ -325,8 +271,5 @@ bool hub_data_init(void) {
     mgos_set_timer(mgos_sys_config_get_hub_data_save_interval() * 1000,
                    MGOS_TIMER_REPEAT, hub_data_save_timer_cb, NULL);
   }
-  mg_rpc_add_handler(c, "Sensor.ReportTemp",
-                     "{sid: %d, name: %Q, ts: %lf, temp: %lf, rh: %lf}",
-                     sensor_report_temp_handler, NULL);
   return true;
 }
