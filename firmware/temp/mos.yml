@@ -1,7 +1,7 @@
 author: rojer
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.8.0
+version: 2.9.0
 
 libs_version: latest
 modules_version: latest
@@ -14,6 +14,7 @@ filesystem:
 libs:
   - origin: https://github.com/mongoose-os-libs/arduino-dallas-temperature
   - origin: https://github.com/mongoose-os-libs/dns-sd
+  - origin: https://github.com/mongoose-os-libs/bh1750
   - origin: https://github.com/mongoose-os-libs/bme680
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/lolin-button
@@ -38,8 +39,8 @@ config_schema:
   - ["dns_sd.enable", true]
   - ["dns_sd.host_name", ""]
   - ["i2c.enable", true]
-  - ["i2c.sda_gpio", 12]
-  - ["i2c.scl_gpio", 14]
+  - ["i2c.sda_gpio", 4]
+  - ["i2c.scl_gpio", 5]
   - ["ssd1306.enable", false]
   - ["ssd1306.width", 64]
   - ["ssd1306.height", 48]

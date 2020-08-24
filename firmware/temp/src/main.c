@@ -1,5 +1,6 @@
 #include "mgos.h"
 
+#include "mgos_bh1750.h"
 #include "mgos_bme680.h"
 #include "mgos_lolin_button.h"
 #include "mgos_rpc.h"
@@ -17,6 +18,9 @@ int s_addr = 0;
 static const char *s_st = NULL;
 static void (*s_read_func)(int addr, float *temp, float *rh) = NULL;
 
+static const char *s_light_st = NULL;
+static struct mgos_bh1750 *s_bh = NULL;
+
 static void si7005_read(int addr, float *temp, float *rh) {
   *temp = si7005_read_temp();
   *rh = si7005_read_rh();
@@ -26,16 +30,16 @@ static void si7005_read(int addr, float *temp, float *rh) {
 #define BTN_GPIO 0
 #define LED_GPIO 2
 
-static void read_sensor(void) {
+static void read_temp_sensor(void) {
   int sid = mgos_sys_config_get_sensor_id();
+  const char *hub_addr = mgos_sys_config_get_hub_address();
   float temp = INVALID_VALUE, rh = INVALID_VALUE;
-  mgos_gpio_toggle(LED_GPIO);
+  if (s_read_func == NULL) return;
   s_read_func(s_addr, &temp, &rh);
   bool have_temp = (temp != INVALID_VALUE);
   bool have_rh = (rh != INVALID_VALUE);
   LOG(LL_INFO, ("SID %d ST %s T %.2f RH %.2f", sid, s_st, temp, rh));
-  const char *hub_addr = mgos_sys_config_get_hub_address();
-  if (sid < 0) return;
+  if (sid < 0 || hub_addr == NULL) return;
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
   double now = mg_time();
   const char *name = mgos_sys_config_get_sensor_name();
@@ -45,7 +49,6 @@ static void read_sensor(void) {
               (name ? " " : ""));
   mg_asprintf(&name_rh, sizeof(buf2), "%s%sRH", (name ? name : ""),
               (name ? " " : ""));
-  if (name == NULL) name = "";
   if (have_temp && have_rh) {
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.DataMulti"), NULL,
                  NULL, &opts,
@@ -62,20 +65,55 @@ static void read_sensor(void) {
     mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
                  &opts,
                  "{sid: %d, subid: %d, st: %Q, name: %Q, ts: %f, v: %.3f}", sid,
-                 0, s_st, name_rh, now, rh);
+                 1, s_st, name_rh, now, rh);
   }
-  mgos_gpio_toggle(LED_GPIO);
   if (name_temp != buf1) free(name_temp);
   if (name_rh != buf2) free(name_rh);
 }
 
+static void read_light_sensor(void) {
+  int sid = mgos_sys_config_get_sensor_id();
+  const char *hub_addr = mgos_sys_config_get_hub_address();
+  if (s_bh == NULL) return;
+  int raw;
+  float lux = mgos_bh1750_read_lux(s_bh, &raw);
+  double now = mg_time();
+  LOG(LL_INFO, ("SID %.2f lx (%d raw)", lux, raw));
+  if (lux < 0) return;
+  if (sid < 0 || hub_addr == NULL) return;
+  struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
+  const char *name = mgos_sys_config_get_sensor_name();
+  char buf1[50], buf2[50];
+  char *name_light = buf1, *name_raw = buf2;
+  mg_asprintf(&name_light, sizeof(buf1), "%s%sLight", (name ? name : ""),
+              (name ? " " : ""));
+  mg_asprintf(&name_raw, sizeof(buf2), "%s%sLight (raw)", (name ? name : ""),
+              (name ? " " : ""));
+  mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.DataMulti"), NULL, NULL,
+               &opts,
+               "{ts: %.3f, data: ["
+               "{sid: %d, subid: %d, st: %Q, name: %Q, v: %.3f}, "
+               "{sid: %d, subid: %d, st: %Q, name: %Q, v: %d}]}",
+               now, sid, 50, s_light_st, name_light, lux, sid, 51, s_light_st,
+               name_raw, raw);
+  if (name_light != buf1) free(name_light);
+  if (name_raw != buf2) free(name_raw);
+}
+
+static void read_sensors(void) {
+  mgos_gpio_toggle(LED_GPIO);
+  read_temp_sensor();
+  read_light_sensor();
+  mgos_gpio_toggle(LED_GPIO);
+}
+
 static void sensor_timer_cb(void *arg) {
-  read_sensor();
+  read_sensors();
   (void) arg;
 }
 
 static void btn_cb(int pin, void *arg) {
-  read_sensor();
+  read_sensors();
   (void) pin;
   (void) arg;
 }
@@ -278,7 +316,17 @@ enum mgos_app_init_result mgos_app_init(void) {
   } else {
     LOG(LL_ERROR, ("Unknown sensor type '%s'", st));
   }
-  if (s_read_func != NULL) {
+
+  uint8_t bh1750_addr = mgos_bh1750_detect();
+  if (bh1750_addr != 0) {
+    s_light_st = "BH1750";
+    LOG(LL_INFO, ("Found BH1750 sensor at %#x", bh1750_addr));
+    s_bh = mgos_bh1750_create(bh1750_addr);
+    mgos_bh1750_set_config(s_bh, MGOS_BH1750_MODE_CONT_HIGH_RES,
+                           MGOS_BH1750_MTIME_DEFAULT);
+  }
+
+  if (s_read_func != NULL || s_bh != NULL) {
     s_st = st;
     mgos_set_timer(mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
                    sensor_timer_cb, NULL);
