@@ -218,7 +218,7 @@ out:
 static void hub_sensor_data_handler(struct mg_rpc_request_info *ri,
                                     void *cb_arg, struct mg_rpc_frame_info *fi,
                                     struct mg_str args) {
-  if (parse_data_point(ri, args, 0)) {
+  if (!parse_data_point(ri, args, 0)) {
     goto out;  // Error already sent.
   }
 
