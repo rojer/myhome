@@ -26,7 +26,7 @@ config_schema:
   - ["hub.light.relay_gpio", "i", 32, {"title": "Relay GPIO"}]
   - ["hub.light.check_interval", "i", 300, {"title": "Light check interval"}]
   - ["hub.control", "o", {"title": "Heater settings"}]
-  - ["hub.control.enable", "b", false, {"title": "Enable control logic"}]
+  - ["hub.control.enable", "b", true, {"title": "Enable control logic"}]
   - ["hub.control.eval_interval", "i", 60, {"title": "Evaluation interval"}]
   - ["hub.control.limit", "o", {"title": "Limit 0"}]
   - ["hub.control.limit.sid", "i", -1, {"title": "Sensor ID"}]
