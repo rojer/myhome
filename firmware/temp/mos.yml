@@ -1,7 +1,7 @@
 author: rojer
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.9.0
+version: 2.9.1
 
 libs_version: latest
 modules_version: latest
@@ -52,6 +52,7 @@ config_schema:
   - ["sensor_name", "s", "", {title: "Sensor Name"}]
   - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
   - ["hub_address", "s", "", {title: "Report temperature to this address"}]
+  - ["bh1750_mtime", "i", 69, {title: "Measurement time for the BH1750"}]
   - ["provision.led.pin", 2]
   - ["provision.led.active_high", false]
   - ["provision.stable_state", 2]

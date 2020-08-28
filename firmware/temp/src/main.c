@@ -323,7 +323,7 @@ enum mgos_app_init_result mgos_app_init(void) {
     LOG(LL_INFO, ("Found BH1750 sensor at %#x", bh1750_addr));
     s_bh = mgos_bh1750_create(bh1750_addr);
     mgos_bh1750_set_config(s_bh, MGOS_BH1750_MODE_CONT_HIGH_RES,
-                           MGOS_BH1750_MTIME_DEFAULT);
+                           mgos_sys_config_get_bh1750_mtime());
   }
 
   if (s_read_func != NULL || s_bh != NULL) {
