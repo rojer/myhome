@@ -439,8 +439,10 @@ void Control::GetOutputsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
     const std::string &n = o->name();
     const std::string &pin_name = o->pin_name();
     if (!first) json_printf(&out, ", ");
-    json_printf(&out, "{id: %d, name: %Q, pin: %d, pin_name: %Q, act: %d}",
-                o->id(), n.c_str(), o->pin(), pin_name.c_str(), o->act());
+    json_printf(&out,
+                "{id: %d, name: %Q, pin: %d, pin_name: %Q, act: %d, on: %B}",
+                o->id(), n.c_str(), o->pin(), pin_name.c_str(), o->act(),
+                o->GetState());
     first = false;
   }
 

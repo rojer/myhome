@@ -111,10 +111,11 @@ bool Limit::Eval() {
   } else if (on_ && sd.value < l_->max) {
     want_on = true;
   } else {
-    LOG(LL_INFO, ("S%d/%d: Ok (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
-                  sd.value, l_->min, l_->max));
     want_on = false;
   }
+  LOG(LL_INFO,
+      ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", (want_on ? "Not ok" : "Ok"),
+       sd.sid, sd.subid, sd.value, l_->min, l_->max));
 
   if (want_on != on_) {
     on_ = want_on;
