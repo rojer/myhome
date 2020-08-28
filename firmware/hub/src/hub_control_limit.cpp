@@ -79,9 +79,11 @@ bool Limit::IsValid() {
 }
 
 bool Limit::Eval() {
+  double age;
   bool want_on = false;
   bool enabled = l_->enable;
   struct sensor_data sd = {};
+  if (!IsValid()) return false;
 
   if (enabled && l_->sid == 0) {
     struct tm now = {};
@@ -96,26 +98,28 @@ bool Limit::Eval() {
     }
   }
 
+  bool log = false;
   if (!enabled) {
     want_on = false;
   } else if (!hub_get_data(l_->sid, l_->subid, &sd)) {
     LOG(LL_INFO, ("S%d/%d: no data yet", l_->sid, l_->subid));
     want_on = false;
-  } else if (cs_time() - sd.ts > 300) {
-    LOG(LL_INFO, ("S%d/%d: data is stale", sd.sid, sd.subid));
+  } else if ((age = cs_time() - sd.ts) > 300) {
+    LOG(LL_INFO, ("S%d/%d: data is stale (%.3lf old)", sd.sid, sd.subid, age));
     want_on = false;
   } else if (!on_ && sd.value < l_->min) {
     LOG(LL_INFO,
         ("S%d/%d: %.3lf < %.3lf", sd.sid, sd.subid, sd.value, l_->min));
     want_on = true;
   } else if (on_ && sd.value < l_->max) {
+    LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
+                  "Not ok", sd.value, l_->min, l_->max));
     want_on = true;
   } else {
+    LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
+                  "Ok", sd.value, l_->min, l_->max));
     want_on = false;
   }
-  LOG(LL_INFO,
-      ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", (want_on ? "Not ok" : "Ok"),
-       sd.sid, sd.subid, sd.value, l_->min, l_->max));
 
   if (want_on != on_) {
     on_ = want_on;
