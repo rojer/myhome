@@ -12,7 +12,7 @@ class Control {
 
   bool IsEnabled() const;
   void SetEnabled(bool enable, const std::string &source);
-  void Eval();
+  void Eval(bool force = false);
   void ReportOutputs();
   bool GetOutputStatus(const std::string &name_or_id, bool *on,
                        double *last_change);

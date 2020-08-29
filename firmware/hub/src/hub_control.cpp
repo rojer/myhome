@@ -155,10 +155,10 @@ void Control::SetEnabled(bool enable, const std::string &source) {
   LOG(LL_INFO, ("Control %s -> %s (%s)", onoff(cfg_->enable), onoff(enable),
                 source.c_str()));
   cfg_->enable = enable;
-  Eval();
+  Eval(true /* force */);
 }
 
-void Control::Eval() {
+void Control::Eval(bool force) {
   double now = cs_time();
   std::set<Output *> want_outputs_on;
   if (cfg_->enable) {
@@ -168,7 +168,7 @@ void Control::Eval() {
       s_deadline = 0;
     }
     if (s_deadline != 0) return;  // Heater is under manual control.
-    if (now - last_eval_ < cfg_->eval_interval) return;
+    if (now - last_eval_ < cfg_->eval_interval && !force) return;
     for (Limit *l : limits_) {
       bool want_on = l->Eval();
       if (want_on) {
@@ -289,7 +289,7 @@ static void hub_heater_set_handler(struct mg_rpc_request_info *ri, void *cb_arg,
   mg_rpc_send_responsef(ri, "{ctl_on: %B, heater_on: %B, deadline: %.3lf}",
                         s_ctl->IsEnabled(), s_heater_on, s_deadline);
 
-  s_ctl->Eval();
+  s_ctl->Eval(true /* force */);
 
 out:
   (void) cb_arg;
@@ -405,7 +405,7 @@ void Control::SetLimitRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
     return;
   }
 
-  ctl->Eval();
+  ctl->Eval(true /* force */);
 
   mg_rpc_send_responsef(ri, nullptr);
 
