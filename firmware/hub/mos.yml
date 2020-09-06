@@ -1,6 +1,6 @@
 name: hub
 platform: esp32
-version: 2.9.1
+version: 2.9.2
 
 libs_version: latest
 modules_version: latest
@@ -12,6 +12,12 @@ filesystem:
   - fs
 
 config_schema:
+  - ["file_logger.enable", false]
+  - ["file_logger.buf_size", 4096]
+  - ["file_logger.buf_line", false]
+  - ["file_logger.max_num_files", 10]
+  - ["file_logger.max_file_size", 10000]
+  - ["file_logger.rpc_service_enable", true]
   - ["i2c.sda_gpio", 13]
   - ["i2c.scl_gpio", 16]
   - ["provision.led.pin", 12]
@@ -83,6 +89,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/cron
   - origin: https://github.com/mongoose-os-libs/crontab
   - origin: https://github.com/mongoose-os-libs/dns-sd
+  - origin: https://github.com/mongoose-os-libs/file-logger
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/i2c
   - origin: https://github.com/mongoose-os-libs/provision
