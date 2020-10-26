@@ -6,10 +6,6 @@
 extern "C" {
 #endif
 
-#define LIGHT_SID 50
-
-#define LIGHTS_SUBID 0
-
 #define UPTIME_SUBID 0
 #define HEAP_FREE_SUBID 1
 

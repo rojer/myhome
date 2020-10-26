@@ -98,7 +98,6 @@ bool Limit::Eval() {
     }
   }
 
-  bool log = false;
   if (!enabled) {
     want_on = false;
   } else if (!hub_get_data(l_->sid, l_->subid, &sd)) {

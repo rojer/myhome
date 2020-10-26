@@ -8,7 +8,6 @@
 
 #include "hub.h"
 #include "hub_control.h"
-#include "hub_light.h"
 
 static int s_sl_gpio = -1;
 
@@ -23,12 +22,6 @@ static void status_timer_cb(void *arg) {
   if (s_sl_gpio >= 0) {
     mgos_gpio_write(s_sl_gpio, 1);
     mgos_set_timer(100, 0, blink_off, (void *) (intptr_t) s_sl_gpio);
-  }
-  bool sensor_ok, lights_on;
-  if (hub_light_get_status(&sensor_ok, &lights_on)) {
-    LOG(LL_INFO, ("Light sensor %s, lights %s", (sensor_ok ? "ok" : "error"),
-                  (lights_on ? "on" : "off")));
-    report_to_server(ctl_sid, LIGHTS_SUBID, now, lights_on);
   }
   bool heater_on;
   double last_heater_action_ts;
@@ -48,11 +41,6 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   if (!hub_data_init()) {
     LOG(LL_ERROR, ("Data module init failed"));
-    goto out;
-  }
-
-  if (!hub_light_init()) {
-    LOG(LL_ERROR, ("Light module init failed"));
     goto out;
   }
 
