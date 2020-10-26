@@ -179,14 +179,14 @@ static void report_sensor(struct sensor_state *ss) {
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
                      ss->sid, 0, ss->last_seen_ts, temp);
       }
-      if (xs->tgt_temp != 0 && xs->tgt_temp != 0xff && xs->changed.temp) {
+      if (xs->tgt_temp != 0 && xs->tgt_temp != 0xff && xs->changed.tgt_temp) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %.1f}",
                      ss->sid, 1, ss->last_seen_ts, tgt_temp);
       }
       // Not only battery percentage can be 0 or 0xff for "unknown" but it can
       // sometimes can get non-sensical values like 224 (0xe0).
-      if (xs->batt_pct != 0 && xs->batt_pct <= 100) {
+      if (xs->batt_pct != 0 && xs->batt_pct <= 100 && xs->changed.batt_pct) {
         mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL,
                      NULL, &opts, "{sid: %d, subid: %d, ts: %lf, v: %d}",
                      ss->sid, 2, ss->last_seen_ts, xs->batt_pct);
@@ -338,6 +338,7 @@ static void gap_handler(int ev, void *ev_data, void *userdata) {
 static void timer_cb(void *arg) {
   double now = mgos_uptime();
   struct sensor_state *ss, *sst;
+  int num_reported = 0;
   SLIST_FOREACH_SAFE(ss, &s_sensors, next, sst) {
     if (now - ss->last_seen_uts > mgos_sys_config_get_ttl()) {
       char addr[MGOS_BT_ADDR_STR_LEN];
@@ -345,12 +346,14 @@ static void timer_cb(void *arg) {
           ("Removed sensor %s type %d sid %d",
            mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->type, ss->sid));
       SLIST_REMOVE(&s_sensors, ss, sensor_state, next);
-    } else if (now - ss->last_reported_uts >
-               mgos_sys_config_get_report_interval()) {
+    } else if (num_reported < 4 &&
+               (now - ss->last_reported_uts >
+                mgos_sys_config_get_report_interval())) {
       // Force reporting of everything.
       if (ss->type == BT_SENSOR_XAVAX) ss->xavax.changed.value = 0xff;
       report_sensor(ss);
       ss->last_reported_uts = mgos_uptime();
+      num_reported++;
     }
   }
   start_scan();
