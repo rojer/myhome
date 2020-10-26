@@ -7,9 +7,10 @@ struct mgos_config_hub_control_limit;
 
 class Limit {
  public:
-  explicit Limit(struct mgos_config_hub_control_limit *l);
+  explicit Limit(int id, struct mgos_config_hub_control_limit *l);
   static std::set<std::string> ParseOutputsStr(const std::string &out);
 
+  int id() const;
   int sid() const;
   void set_sid(int sid) const;
   int subid() const;
@@ -28,6 +29,7 @@ class Limit {
   bool Eval();
 
  private:
+  const int id_;
   struct mgos_config_hub_control_limit *l_;
 
   bool on_;

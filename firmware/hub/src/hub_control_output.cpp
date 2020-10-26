@@ -82,5 +82,5 @@ void Output::SetState(bool new_state) {
 void Output::Report() {
   if (!IsValid()) return;
   int v = (GetState() ? 1 : 0);
-  report_to_server(mgos_sys_config_get_hub_ctl_sid(), id(), mg_time(), v);
+  report_to_server(mgos_sys_config_get_hub_out_sid(), id(), mg_time(), v);
 }

@@ -17,7 +17,6 @@ static void blink_off(void *arg) {
 
 static void status_timer_cb(void *arg) {
   double now = mg_time();
-  int ctl_sid = mgos_sys_config_get_hub_ctl_sid();
   int sys_sid = mgos_sys_config_get_hub_sys_sid();
   if (s_sl_gpio >= 0) {
     mgos_gpio_write(s_sl_gpio, 1);

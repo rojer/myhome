@@ -73,7 +73,8 @@ config_schema:
   - ["hub.data_file", "s", "hub_data.json", {"title": "File to store sensor data in"}]
   - ["hub.data_save_interval", "i", 60, {"title": "Save data at this interval"}]
   - ["hub.data_server_addr", "s", "", {"title": "RPC address of the data server (if enabled)"}]
-  - ["hub.ctl_sid", "i", 100, {"title": "Control values pseudo-sensor id"}]
+  - ["hub.lim_sid", "i", 99, {"title": "Control values pseudo-sensor id"}]
+  - ["hub.out_sid", "i", 100, {"title": "Control values pseudo-sensor id"}]
   - ["hub.sys_sid", "i", 200, {"title": "System values pseudo-sensor id"}]
 
 build_vars:

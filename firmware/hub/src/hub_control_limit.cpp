@@ -4,11 +4,15 @@
 
 #include "hub.h"
 
-Limit::Limit(struct mgos_config_hub_control_limit *l)
-    : l_(l), on_(false), last_change_(0) {
+Limit::Limit(int id, struct mgos_config_hub_control_limit *l)
+    : id_(id), l_(l), on_(false), last_change_(0) {
   if (!IsValid()) return;
   LOG(LL_INFO, ("Limit %d/%d: en %d, min %.2lf max %.2lf, out %s", l_->sid,
                 l_->subid, l_->enable, l_->min, l_->max, l_->out));
+}
+
+int Limit::id() const {
+  return id_;
 }
 
 int Limit::sid() const {

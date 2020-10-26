@@ -11,7 +11,7 @@
 #include "common/cs_dbg.h"
 #include "common/cs_time.h"
 #include "hub.h"
-#include "mgos.h"
+#include "mgos.hpp"
 #include "mgos_crontab.h"
 #include "mgos_gpio.h"
 #include "mgos_rpc.h"
@@ -136,7 +136,7 @@ Control::Control(struct mgos_config_hub_control *cfg) : cfg_(cfg) {
         break;
     }
     limits_.push_back(
-        new Limit(const_cast<struct mgos_config_hub_control_limit *>(lcfg)));
+        new Limit(i, const_cast<struct mgos_config_hub_control_limit *>(lcfg)));
   }
 
   mgos_set_timer(1000, MGOS_TIMER_REPEAT, TimerCB, this);
@@ -184,6 +184,10 @@ void Control::Eval(bool force) {
                            name_or_id.c_str(), l->sid(), l->subid()));
           }
         }
+      }
+      if (l->IsValid() && l->enable()) {
+        report_to_server(mgos_sys_config_get_hub_lim_sid(), l->id(), now,
+                         want_on);
       }
     }
   } else {
@@ -305,28 +309,23 @@ void Control::GetLimitsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
 
   json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid);
 
-  struct mbuf mb;
-  mbuf_init(&mb, 50);
-  struct json_out out = JSON_OUT_MBUF(&mb);
-  json_printf(&out, "[");
-
+  std::string res = "[";
   bool first = true;
   for (const Limit *l : ctl->limits_) {
     if (l->sid() < 0 || l->subid() < 0) continue;
     if (sid >= 0 && l->sid() != sid) continue;
     if (subid >= 0 && l->subid() != subid) continue;
-    if (!first) json_printf(&out, ", ");
+    if (!first) res.append(", ");
     const std::string &out_s = l->out();
-    json_printf(
-        &out,
-        "{sid: %d, subid: %d, enable: %B, min: %.2lf, max: %.2lf, out: %Q}",
-        l->sid(), l->subid(), l->enable(), l->min(), l->max(), out_s.c_str());
+    mgos::JSONAppendStringf(&res,
+                            "{id: %d, sid: %d, subid: %d, enable: %B, "
+                            "min: %.2lf, max: %.2lf, out: %Q}",
+                            l->id(), l->sid(), l->subid(), l->enable(),
+                            l->min(), l->max(), out_s.c_str());
     first = false;
   }
-
-  json_printf(&out, "]");
-  mg_rpc_send_responsef(ri, "%.*s", (int) mb.len, mb.buf);
-  mbuf_free(&mb);
+  res.append("]");
+  mg_rpc_send_responsef(ri, "%s", res.c_str());
 
   (void) fi;
 }
@@ -425,11 +424,7 @@ void Control::GetOutputsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
   std::unique_ptr<char> name_owner(name_s);
   std::string name(name_s ? name_s : "");
 
-  struct mbuf mb;
-  mbuf_init(&mb, 50);
-  struct json_out out = JSON_OUT_MBUF(&mb);
-  json_printf(&out, "[");
-
+  std::string res = "[";
   bool first = true;
   for (const Output *o : ctl->outputs_) {
     if (!o->IsValid()) continue;
@@ -438,17 +433,16 @@ void Control::GetOutputsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
 
     const std::string &n = o->name();
     const std::string &pin_name = o->pin_name();
-    if (!first) json_printf(&out, ", ");
-    json_printf(&out,
-                "{id: %d, name: %Q, pin: %d, pin_name: %Q, act: %d, on: %B}",
-                o->id(), n.c_str(), o->pin(), pin_name.c_str(), o->act(),
-                o->GetState());
+    if (!first) res.append(", ");
+    mgos::JSONAppendStringf(
+        &res, "{id: %d, name: %Q, pin: %d, pin_name: %Q, act: %d, on: %B}",
+        o->id(), n.c_str(), o->pin(), pin_name.c_str(), o->act(),
+        o->GetState());
     first = false;
   }
 
-  json_printf(&out, "]");
-  mg_rpc_send_responsef(ri, "%.*s", (int) mb.len, mb.buf);
-  mbuf_free(&mb);
+  res.append("]");
+  mg_rpc_send_responsef(ri, "%s", res.c_str());
 
   (void) fi;
 }
