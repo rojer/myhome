@@ -78,7 +78,7 @@ static void read_light_sensor(void) {
   int raw;
   float lux = mgos_bh1750_read_lux(s_bh, &raw);
   double now = mg_time();
-  LOG(LL_INFO, ("SID %.2f lx (%d raw)", lux, raw));
+  LOG(LL_INFO, ("SID %d: %.2f lx (%d raw)", sid, lux, raw));
   if (lux < 0) return;
   if (sid < 0 || hub_addr == NULL) return;
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
