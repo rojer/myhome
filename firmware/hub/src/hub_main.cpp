@@ -4,7 +4,9 @@
 #include "mgos_app.h"
 #include "mgos_gpio.h"
 #include "mgos_sys_config.h"
+#include "mgos_time.h"
 #include "mgos_timers.h"
+#include "mgos_wifi.h"
 
 #include "hub.h"
 #include "hub_control.h"
@@ -32,6 +34,18 @@ static void status_timer_cb(void *arg) {
   }
   report_to_server(sys_sid, UPTIME_SUBID, now, mgos_uptime());
   report_to_server(sys_sid, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
+
+  {
+    static double s_last_connected = 0;
+    double now_uptime = mgos_uptime();
+    enum mgos_wifi_status wifi_st = mgos_wifi_get_status();
+    if (wifi_st == MGOS_WIFI_IP_ACQUIRED) {
+      s_last_connected = now_uptime;
+    } else if (now - s_last_connected > 300) {
+      LOG(LL_ERROR, ("Disconnected for 5 minutes, deglucking"));
+      mgos_system_restart_after(500);
+    }
+  }
   (void) arg;
 }
 
