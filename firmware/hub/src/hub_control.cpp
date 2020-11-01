@@ -170,6 +170,19 @@ void Control::Eval(bool force) {
     if (s_deadline != 0) return;  // Heater is under manual control.
     if (now - last_eval_ < cfg_->eval_interval && !force) return;
     for (Limit *l : limits_) {
+      struct sensor_data sd;
+      uint8_t sensor_type = (l->sid() >> 24);
+      // For Xavax sensors, update thresholds from target temperature.
+      if (sensor_type == 1 && hub_get_data(l->sid(), 1, &sd)) {
+        double want_min = sd.value - 0.5, want_max = sd.value + 0.5;
+        if (l->min() != want_min || l->max() != want_max) {
+          LOG(LL_INFO, ("%d: SID %d: Updating thresholds to match TT %.1f",
+                        l->id(), l->sid(), sd.value));
+          l->set_min(want_min);
+          l->set_max(want_max);
+          mgos_sys_config_save(&mgos_sys_config, false /* try_once */, nullptr);
+        }
+      }
       bool want_on = l->Eval();
       if (want_on) {
         for (const std::string &name_or_id : l->outputs()) {
