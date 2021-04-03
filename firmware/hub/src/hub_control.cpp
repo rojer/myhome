@@ -33,7 +33,8 @@ static const char *onoff(bool on) {
 
 static Control *s_ctl = nullptr;
 
-Control::Control(struct mgos_config_hub_control *cfg) : cfg_(cfg) {
+Control::Control(struct mgos_config_hub_control *cfg)
+    : cfg_(cfg), eval_timer_(std::bind(&Control::Eval, this, false)) {
   for (int i = 0; i < NUM_OUTPUTS; i++) {
     const struct mgos_config_hub_control_output *ocfg = nullptr;
     switch (i) {
@@ -139,7 +140,7 @@ Control::Control(struct mgos_config_hub_control *cfg) : cfg_(cfg) {
         new Limit(i, const_cast<struct mgos_config_hub_control_limit *>(lcfg)));
   }
 
-  mgos_set_timer(1000, MGOS_TIMER_REPEAT, TimerCB, this);
+  eval_timer_.Reset(1000, MGOS_TIMER_REPEAT);
 
   if (!cfg_->enable) {
     LOG(LL_INFO, ("Control is disabled"));
@@ -161,6 +162,8 @@ void Control::SetEnabled(bool enable, const std::string &source) {
 void Control::Eval(bool force) {
   double now = cs_time();
   std::set<Output *> want_outputs_on;
+  LOG(LL_DEBUG,
+      ("Eval %d %f %f %f", cfg_->enable, now, s_deadline, last_eval_));
   if (cfg_->enable) {
     if (s_deadline > 0 && s_deadline < now) {
       LOG(LL_INFO, ("Deadline expired"));
@@ -234,12 +237,6 @@ void Control::ReportOutputs() {
   for (Output *o : outputs_) {
     o->Report();
   }
-}
-
-// static
-void Control::TimerCB(void *arg) {
-  ((Control *) arg)->Eval();
-  (void) arg;
 }
 
 Output *Control::GetOutputByNameOrID(const std::string &name_or_id) const {

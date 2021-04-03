@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "mgos_timers.hpp"
+
 #include "hub_control_limit.h"
 #include "hub_control_output.h"
 
@@ -28,12 +30,12 @@ class Control {
                                    struct mg_str args);
 
  private:
-  static void TimerCB(void *arg);
   Output *GetOutputByNameOrID(const std::string &name_or_id) const;
 
   struct mgos_config_hub_control *cfg_;
   std::vector<Limit *> limits_;
   std::vector<Output *> outputs_;
+  mgos::Timer eval_timer_;
   double last_action_ts_;
   double last_eval_;
 };
