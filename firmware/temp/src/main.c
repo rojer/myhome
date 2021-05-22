@@ -4,12 +4,14 @@
 #include "mgos_bme680.h"
 #include "mgos_lolin_button.h"
 #include "mgos_rpc.h"
+#include "mgos_veml7700.h"
 
 #include "bme680.h"
 #include "ds18b20.h"
 #include "sht3x.h"
 #include "si7005.h"
 
+#include "srf05.h"
 #include "ssd1306.h"
 
 #define INVALID_VALUE -1000.0
@@ -255,6 +257,28 @@ static void lolin_button_handler(int ev, void *ev_data, void *userdata) {
   (void) userdata;
 }
 
+struct mgos_veml7700 *s_veml7700 = NULL;
+
+void veml7700_timer(void *arg) {
+  float lux_als = mgos_veml7700_read_lux_als(s_veml7700, true /* adjust */);
+  float lux_white = mgos_veml7700_read_lux_white(s_veml7700, true /* adjust */);
+  if (lux_als >= 0 && lux_white >= 0) {
+    LOG(LL_INFO, ("%.3f lux ALS %.3f lux white", lux_als, lux_white));
+  }
+  (void) arg;
+}
+
+static void get_lux_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg, struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
+  float lux_als = mgos_veml7700_read_lux_als(s_veml7700, true /* adjust */);
+  float lux_white = mgos_veml7700_read_lux_white(s_veml7700, true /* adjust */);
+  mg_rpc_send_responsef(ri, "{lux_als: %.3f, lux_white: %.3f}", lux_als, lux_white);
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
 enum mgos_app_init_result mgos_app_init(void) {
   int bme680_addr = mgos_sys_config_get_bme680_i2c_addr();
   const char *st = mgos_sys_config_get_sensor_type();
@@ -340,5 +364,21 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_ssd1306_refresh(oled, true /* force */);
   mgos_event_add_group_handler(MGOS_EV_LOLIN_BUTTON_BASE, lolin_button_handler,
                                NULL);
+
+  srf05_init(mgos_sys_config_get_sensor_id(),
+             mgos_sys_config_get_srf05_trig_pin(),
+             mgos_sys_config_get_srf05_echo_pin());
+
+  if (mgos_veml7700_detect(mgos_i2c_get_bus(0))) {
+    s_veml7700 = mgos_veml7700_create(mgos_i2c_get_bus(0));
+    bool res = mgos_veml7700_set_cfg(
+        s_veml7700,
+        MGOS_VEML7700_CFG_ALS_IT_100 | MGOS_VEML7700_CFG_ALS_GAIN_1,
+        MGOS_VEML7700_PSM_0);
+    LOG(LL_INFO, ("Detected VEML7700, config %d", res));
+    mgos_set_timer(1000, MGOS_TIMER_REPEAT, veml7700_timer, NULL);
+    mg_rpc_add_handler(mgos_rpc_get_global(), "Sensor.GetLux", "", get_lux_handler, NULL);
+  }
+
   return MGOS_APP_INIT_SUCCESS;
 }
