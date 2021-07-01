@@ -55,8 +55,8 @@ config_schema:
   - ["interval", "i", 1, {title: "Measurement interval, seconds"}]
   - ["hub_address", "s", "", {title: "Report temperature to this address"}]
   - ["bh1750_mtime", "i", 69, {title: "Measurement time for the BH1750"}]
-  - ["srf05_trig_pin", "i", 27, {title: "SRF05 TRIG pin"}]
-  - ["srf05_echo_pin", "i", 14, {title: "SRF05 ECHO pin"}]
+  - ["srf05_trig_pin", "i", -1, {title: "SRF05 TRIG pin"}] # 27
+  - ["srf05_echo_pin", "i", -1, {title: "SRF05 ECHO pin"}] # 14
 
   - ["provision.led.pin", -1]
   - ["provision.led.active_high", false]
