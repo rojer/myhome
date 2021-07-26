@@ -181,16 +181,18 @@ func (mch *mgRPCConnHandler) Handle(ctx context.Context, jsc *mgrpc.Conn, req *m
 			Message: "Method not found",
 		}
 	}
-	switch {
-	case err == nil && rerr == nil:
-		jsc.Reply(ctx, req.ID, resp)
-	case rerr != nil:
-		jsc.ReplyWithError(ctx, req.ID, rerr)
-	case err != nil:
-		jsc.ReplyWithError(ctx, req.ID, &mgrpc.Error{
-			Code:    -1,
-			Message: err.Error(),
-		})
+	if req.ID.Num != 0 || req.ID.Str != "" {
+		switch {
+		case err == nil && rerr == nil:
+			jsc.Reply(ctx, req.ID, resp)
+		case rerr != nil:
+			jsc.ReplyWithError(ctx, req.ID, rerr)
+		case err != nil:
+			jsc.ReplyWithError(ctx, req.ID, &mgrpc.Error{
+				Code:    -1,
+				Message: err.Error(),
+			})
+		}
 	}
 }
 
