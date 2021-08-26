@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name OSTVN04A150)(type Legacy)(uri /home/rojer/myhome/alarm_sensors/2021-04-04_02-50-07/2021-04-04_02-50-07.lib)(options "")(descr ""))
+  (lib (name 1)(type Legacy)(uri ${KIPRJMOD}/1.lib)(options "")(descr ""))
+)

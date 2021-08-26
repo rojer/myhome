@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name OSTVN04A150)(type KiCad)(uri /home/rojer/myhome/alarm_sensors/2021-04-04_02-50-07/footprints.pretty)(options "")(descr ""))
+  (lib (name 1)(type KiCad)(uri /home/rojer/myhome/alarm_sensors/fp)(options "")(descr ""))
+)

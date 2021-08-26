@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP PC02S1203A
+D Isolated DC/DC Converters DC/DC Converter, 3.3Vout, 2W
+K
+F https://www.mouser.ie/datasheet/2/632/DS_PC02S_D-1858650.pdf
+$ENDCMP
+#
+#End Doc Library
