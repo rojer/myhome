@@ -50,10 +50,11 @@ static bool ReadPin(int pin, bool is_int) {
 }
 
 static void ReadPins() {
-  if (mg_time() - s_last_poll < mgos_sys_config_get_interval()) {
+  if (mg_time() - s_last_poll < mgos_sys_config_get_interval() / 2) {
     return;
   }
   LOG(LL_INFO, ("Reading pins"));
+  s_last_poll = mg_time();
   std::string data;
   for (size_t i = 0; i < s_pins.size(); i++) {
     int pin = s_pins[i];
