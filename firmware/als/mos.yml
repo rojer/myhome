@@ -1,0 +1,48 @@
+author: rojer
+platform: esp32
+description: Temperature sensor firmware
+version: 1.0.0
+
+libs_version: latest
+modules_version: latest
+mongoose_os_version: latest
+
+sources:
+  - src
+filesystem:
+  - fs
+libs:
+  - origin: https://github.com/mongoose-os-libs/dns-sd
+  - origin: https://github.com/mongoose-os-libs/file-logger
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/provision
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/rpc-udp
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/wifi
+
+config_schema:
+  - ["dns_sd.enable", true]
+  - ["dns_sd.host_name", ""]
+  - ["sensor_type", "s", "", {title: "Sensor type"}]
+  - ["sensor_id", "i", -1, {title: "Sensor ID"}]
+  - ["sensor_subid_base", "i", 100, {title: "Sensor sub ID base number"}]
+  - ["sensor_name", "s", "", {title: "Sensor Name"}]
+  - ["interval", "i", 60, {title: "Measurement interval, seconds"}]
+  - ["hub_address", "s", "", {title: "Report temperature to this address"}]
+  - ["invert", "b", true, {title: "Invert reported value"}]
+
+  - ["provision.led.pin", 18]
+  - ["provision.stable_state", 2]
+
+cdefs:
+  LED_PIN: 18
+  BTN_PIN: 35
+  ZONE_PINS: '"25,26,27,14,13,19,16,21,22,23"'
+
+manifest_version: 2017-06-29
