@@ -1850,4 +1850,6 @@ Wire Wire Line
 	9690 3560 9690 3950
 Wire Wire Line
 	9690 1210 9690 1600
+Text Notes 645  3760 0    89   ~ 18
+TODO: BTN 35 -> 32
 $EndSCHEMATC

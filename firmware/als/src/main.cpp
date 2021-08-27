@@ -49,8 +49,8 @@ static bool ReadPin(int pin, bool is_int) {
   return value;
 }
 
-static void ReadPins() {
-  if (mg_time() - s_last_poll < mgos_sys_config_get_interval() / 2) {
+static void ReadPins(bool force = false) {
+  if (!force && mg_time() - s_last_poll < mgos_sys_config_get_interval() / 2) {
     return;
   }
   LOG(LL_INFO, ("Reading pins"));
@@ -92,12 +92,10 @@ extern "C" enum mgos_app_init_result mgos_app_init() {
   mgos_set_timer(
       mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
       [](void *) { ReadPins(); }, nullptr);
-#if 0
   mgos_gpio_setup_input(BTN_PIN, MGOS_GPIO_PULL_UP);
   mgos_gpio_set_button_handler(
       BTN_PIN, MGOS_GPIO_PULL_UP, MGOS_GPIO_INT_EDGE_NEG, 20,
-      [](int, void *) { ReadPins(); }, nullptr);
-#endif
+      [](int, void *) { ReadPins(true /* force */); }, nullptr);
   mgos_event_add_handler(MGOS_NET_EV_IP_ACQUIRED, ReadPinsEv, nullptr);
   mgos_event_add_handler(MGOS_EVENT_TIME_CHANGED, ReadPinsEv, nullptr);
   return MGOS_APP_INIT_SUCCESS;
