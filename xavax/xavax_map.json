@@ -9,5 +9,6 @@
   "e0:e5:cf:af:fc:7b": { "name": "2 Bedroom M",     "sid": 28310651, "target_temp": 23.5 },
   "74:da:ea:b8:f4:f0": { "name": "2 Juna study",    "sid": 28898544, "target_temp": 23.5 },
   "e0:e5:cf:b0:0d:07": { "name": "2 Guest bedroom", "sid": 28314887, "target_temp": 11.5 },
-  "e0:e5:cf:e4:22:cf": { "name": "2 Man Cave",      "sid": 31728335, "target_temp": 22.5 }
+  "e0:e5:cf:e4:22:cf": { "name": "2 Man Cave",      "sid": 31728335, "target_temp": 22.5 },
+  "80:60:1f:94:3d:c6": { "name": "1 Bathroom 2",    "sid": 31728335, "target_temp": 21.5 }
 }

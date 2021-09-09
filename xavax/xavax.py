@@ -187,9 +187,15 @@ class ScanDelegate(btle.DefaultDelegate):
         if not e: return
         return e.get("target_temp", None)
 
+# 80:60:1f:94:3d:c6 -88 b'\x02\x01\x06\x11\x07g\xdf\xd10B\x169\x89\xe4\x11\xe9G\x00\xee\xe9G\t\xff,*_\x11"\x00b\x8b\x0b\tComet Blue'
+# e0:e5:cf:af:ee:98 -85 b'\x02\x01\x06\x11\x06g\xdf\xd10B\x169\x89\xe4\x11\xe9G\x00\xee\xe9G\t\xff2+\x00\x81\x00\xff\x82\x1c\x0b\tComet Blue\x05\x12<\x00L\x00\x02\n\x00'
+
+
     def handleDiscovery(self, data, isNewDev, isNewData):
-        if data.getValueText(6) != "47e9ee00-47e9-11e4-8939-164230d1df67":
+        if "47e9ee00-47e9-11e4-8939-164230d1df67" not in (data.getValueText(6), data.getValueText(7)):
             return
+#        if data.addr != "80:60:1f:94:3d:c6":
+#            return
         status_data = data.getValueText(0xff)
         sd = binascii.unhexlify(status_data)
         t, tt, bpct, flags, state = sd[:5]
@@ -214,8 +220,8 @@ class ScanDelegate(btle.DefaultDelegate):
                 if act not in self._actions:
                     self._actions.append(act)
 
-        print("%s (%-20s), status %4s [T %s TT %4s batt %s flags %s(%#02x) state %s(%#02x)]%s" % (
-            data.addr, self.get_name(data.addr), status_data,
+        print("%s %d (%-20s), status %4s [T %s TT %4s batt %s flags %s(%#02x) state %s(%#02x)]%s" % (
+            data.addr, data.rssi, self.get_name(data.addr), status_data,
             ts, tts, bpcts, fs, flags, sts, state, acts))
 
     def get_actions(self):
