@@ -1,7 +1,7 @@
 author: mongoose-os
 platform: esp32
 description: BT -> TCP relay
-version: 1.0.9
+version: 1.0.10
 
 #libs_version: 2.12.1
 #modules_version: 2.12.1
@@ -33,7 +33,7 @@ config_schema:
   - ["dns_sd.enable", true]
   - ["dns_sd.host_name", ""]
   - ["wifi.ap.enable", false]
-  - ["ttl", "i", 120, {title: "If not seen for this long, remove"}]
+  - ["ttl", "i", 300, {title: "If not seen for this long, remove"}]
   - ["report_on_change", "b", true, {title: "Report if data changes"}]
   - ["report_interval", "i", 60, {title: "Report at this interval"}]
   - ["hub_address", "s", "", {title: "Relay to this address"}]

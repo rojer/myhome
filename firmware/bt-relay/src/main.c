@@ -17,16 +17,6 @@ enum bt_sensor_type {
   BT_SENSOR_ASENSOR = 2,
 };
 
-static void start_scan(void) {
-  if (s_scanning) return;
-  LOG(LL_DEBUG, ("Starting scan"));
-  struct mgos_bt_gap_scan_opts opts = {
-      .duration_ms = 1500,
-      .active = false,
-  };
-  s_scanning = mgos_bt_gap_scan(&opts);
-}
-
 struct asensor_data {
   uint8_t hdr[9];   // 02 01 06 03 03 f5 fe 13 ff
   uint16_t vendor;  // d2 00
@@ -129,6 +119,24 @@ static struct sensor_state *find_sensor_state(const struct mgos_bt_addr *addr) {
     if (mgos_bt_addr_cmp(&ss->addr, addr) == 0) return ss;
   }
   return NULL;
+}
+
+static void start_scan(void) {
+  if (s_scanning) return;
+  static bool s_active = false;
+  int num_ss = 0;
+  struct sensor_state *ss;
+  // s_active |= 1;
+  SLIST_FOREACH(ss, &s_sensors, next) {
+    num_ss++;
+  }
+  LOG(LL_DEBUG, ("Starting scan act %d ns %d hf %d", s_active, num_ss,
+                 (int) mgos_get_free_heap_size()));
+  struct mgos_bt_gap_scan_opts opts = {
+      .duration_ms = 5000,
+      .active = s_active,
+  };
+  s_scanning = mgos_bt_gap_scan(&opts);
 }
 
 static float xavax_conv_temp(uint8_t t) {
@@ -346,9 +354,9 @@ static void timer_cb(void *arg) {
           ("Removed sensor %s type %d sid %d",
            mgos_bt_addr_to_str(&ss->addr, 0, addr), ss->type, ss->sid));
       SLIST_REMOVE(&s_sensors, ss, sensor_state, next);
-    } else if (num_reported < 4 &&
-               (now - ss->last_reported_uts >
-                mgos_sys_config_get_report_interval())) {
+      free(ss);
+    } else if (num_reported < 4 && (now - ss->last_reported_uts >
+                                    mgos_sys_config_get_report_interval())) {
       // Force reporting of everything.
       if (ss->type == BT_SENSOR_XAVAX) ss->xavax.changed.value = 0xff;
       report_sensor(ss);
