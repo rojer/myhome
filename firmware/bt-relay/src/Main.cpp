@@ -25,6 +25,8 @@ static void StartScan() {
   struct mgos_bt_gap_scan_opts opts = {
       .duration_ms = 5000,
       .active = s_active,
+      .interval_ms = 0,  // Default
+      .window_ms = 0,  // Default
   };
   s_scanning = mgos_bt_gap_scan(&opts);
 }

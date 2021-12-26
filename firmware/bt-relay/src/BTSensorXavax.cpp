@@ -119,7 +119,7 @@ void BTSensorXavax::Report(uint32_t whatv) {
   // Not only battery percentage can be 0 or 0xff for "unknown" but it can
   // sometimes can get non-sensical values like 224 (0xe0).
   // We still report value 0 though, to report nearly dead battery.
-  if (what.batt_pct && batt_pct_ >= 0 && batt_pct_ <= 100 && tgt_temp_ != 0) {
+  if (what.batt_pct && batt_pct_ <= 100 && tgt_temp_ != 0) {
     ReportData(2, batt_pct_);
   }
   if (what.state) {
