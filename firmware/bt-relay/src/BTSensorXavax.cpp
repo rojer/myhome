@@ -9,16 +9,6 @@
 
 static const mgos::BTUUID kXavaxSvcUUID("47e9ee00-47e9-11e4-8939-164230d1df67");
 
-struct AdvDataXavax {
-  uint8_t temp;
-  uint8_t tgt_temp;
-  uint8_t batt_pct;
-  uint8_t mode;
-  uint8_t state;
-  uint8_t unknown_ff;
-  uint16_t unknown;
-} __attribute__((packed));
-
 union ReportData {
   struct {
     uint32_t temp : 1;
@@ -28,6 +18,12 @@ union ReportData {
   };
   uint32_t value = 0;
 };
+
+std::string BTSensorXavax::AdvData::ToString() const {
+  return mgos::SPrintf(
+      "{T=%u TT=%u B=%u M=0x%02x S=0x%02x UFF=0x%02x U=0x%04x}", temp, tgt_temp,
+      batt_pct, mode, state, unknown_ff, unknown);
+}
 
 // static
 bool BTSensorXavax::Taste(const struct mg_str &adv_data) {
@@ -54,12 +50,12 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
   if (!Taste(adv_data)) return;
   struct mg_str xds = mgos_bt_gap_parse_adv_data(
       adv_data, MGOS_BT_GAP_EIR_MANUFACTURER_SPECIFIC_DATA);
-  if (xds.len != sizeof(AdvDataXavax)) {
+  if (xds.len != sizeof(AdvData)) {
     if (xds.len == 0) return;
     LOG(LL_ERROR, ("Incompatible Xavax data length, %d", (int) xds.len));
     return;
   }
-  const AdvDataXavax *xd = (const AdvDataXavax *) xds.p;
+  const AdvData *xd = (const AdvData *) xds.p;
   LOG(LL_DEBUG, ("Xavax %s RSSI %d t 0x%02x tt 0x%02x batt %d state 0x%02x",
                  addr_.ToString().c_str(), rssi, xd->temp, xd->tgt_temp,
                  xd->batt_pct, xd->state));
@@ -69,18 +65,22 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
   //   T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
   //   T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
   //  2. Target gets some random value. The value is the same as
-  //     in (1) but doesn't seem to be related to anything.
-  // So if temperature suddenly becomes equal to target, we ignore it.
+  //     in (1) but doesn't seem to be related to anything and is always 16.0.
+  // So if temperature suddenly becomes equal to target and target to 16
   if (temp_ != xd->temp) {
-    if (xd->temp == tgt_temp_ && abs(((int) xd->temp) - ((int) temp_)) >= 4) {
-      float temp = ConvTemp(xd->temp);
-      float tgt_temp = ConvTemp(xd->tgt_temp);
-      LOG(LL_INFO, ("%s: Ignored bogus temperature report (%.2f %.2f)",
-                    addr_.ToString().c_str(), temp, tgt_temp));
+    if (xd->temp == tgt_temp_ &&
+        ((abs(((int) xd->temp) - ((int) temp_)) >= 4) ||
+         (tgt_temp_ != (16 * 2) && xd->tgt_temp == (16 * 2)))) {
+      LOG(LL_INFO,
+          ("%s SID %d: Bogus temp report (%.2f %.2f | %s) -> (%.2f %.2f | %s)",
+           addr_.ToString().c_str(), sid_, ConvTemp(temp_), ConvTemp(tgt_temp_),
+           last_adv_data_.ToString().c_str(), ConvTemp(xd->temp),
+           ConvTemp(xd->tgt_temp), xd->ToString().c_str()));
       // We remember the bogus value so we can detect (2).
       bogus_tgt_temp_ = xd->tgt_temp;
     } else {
       temp_ = xd->temp;
+      bogus_tgt_temp_ = 0;
       changed.temp = true;
     }
   }
@@ -89,10 +89,10 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
       tgt_temp_ = xd->tgt_temp;
       changed.tgt_temp = true;
     } else {
-      float temp = ConvTemp(xd->temp);
-      float tgt_temp = ConvTemp(xd->tgt_temp);
-      LOG(LL_INFO, ("%s: Ignored bogus tgt temp report (%.2f %.2f)",
-                    addr_.ToString().c_str(), temp, tgt_temp));
+      LOG(LL_INFO,
+          ("%s: Bogus tgt temp report (%.2f %.2f) -> (%.2f %.2f)",
+           addr_.ToString().c_str(), ConvTemp(temp_), ConvTemp(tgt_temp_),
+           ConvTemp(xd->temp), ConvTemp(xd->tgt_temp)));
     }
   }
   if (state_ != xd->state) {
@@ -104,6 +104,7 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
     batt_pct_ = xd->batt_pct;
     changed.batt_pct = true;
   }
+  last_adv_data_ = *xd;
   UpdateCommon(rssi, changed.value);
 }
 
