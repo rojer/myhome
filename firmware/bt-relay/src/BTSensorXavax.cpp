@@ -61,39 +61,28 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
                  xd->batt_pct, xd->state));
   union ReportData changed;
   // Sometimes bogus values are reported for temperatures.
-  //  1. Current gets value of target, target gets some random value:
+  // Current gets value of target, target gets some random value:
   //   T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
   //   T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
-  //  2. Target gets some random value. The value is the same as
-  //     in (1) but doesn't seem to be related to anything and is always 16.0.
-  // So if temperature suddenly becomes equal to target and target to 16
-  if (temp_ != xd->temp) {
-    if (xd->temp == tgt_temp_ &&
-        ((abs(((int) xd->temp) - ((int) temp_)) >= 4) ||
-         (tgt_temp_ != (16 * 2) && xd->tgt_temp == (16 * 2)))) {
-      LOG(LL_INFO,
-          ("%s SID %d: Bogus temp report (%.2f %.2f | %s) -> (%.2f %.2f | %s)",
-           addr_.ToString().c_str(), sid_, ConvTemp(temp_), ConvTemp(tgt_temp_),
-           last_adv_data_.ToString().c_str(), ConvTemp(xd->temp),
-           ConvTemp(xd->tgt_temp), xd->ToString().c_str()));
-      // We remember the bogus value so we can detect (2).
-      bogus_tgt_temp_ = xd->tgt_temp;
-    } else {
-      temp_ = xd->temp;
-      bogus_tgt_temp_ = 0;
-      changed.temp = true;
-    }
+  // More often than not, the value is 16.
+  if (xd->temp == tgt_temp_ &&
+      ((abs(((int) xd->temp) - ((int) temp_)) >= 4) ||
+       (tgt_temp_ != (16 * 2) && xd->tgt_temp == (16 * 2)))) {
+    LOG(LL_INFO,
+        ("%s SID %d: Bogus temp report (%.2f %.2f | %s) -> (%.2f %.2f | %s)",
+         addr_.ToString().c_str(), sid_, ConvTemp(temp_), ConvTemp(tgt_temp_),
+         last_adv_data_.ToString().c_str(), ConvTemp(xd->temp),
+         ConvTemp(xd->tgt_temp), xd->ToString().c_str()));
+    // We remember the bogus value so we can detect (2).
+    bogus_tgt_temp_ = xd->tgt_temp;
   }
-  if (tgt_temp_ != xd->tgt_temp) {
-    if (xd->tgt_temp != bogus_tgt_temp_) {
-      tgt_temp_ = xd->tgt_temp;
-      changed.tgt_temp = true;
-    } else {
-      LOG(LL_INFO,
-          ("%s: Bogus tgt temp report (%.2f %.2f) -> (%.2f %.2f)",
-           addr_.ToString().c_str(), ConvTemp(temp_), ConvTemp(tgt_temp_),
-           ConvTemp(xd->temp), ConvTemp(xd->tgt_temp)));
-    }
+  if (temp_ != xd->temp && bogus_tgt_temp_ == 0) {
+    temp_ = xd->temp;
+    changed.temp = true;
+  }
+  if (tgt_temp_ != xd->tgt_temp && xd->tgt_temp != bogus_tgt_temp_) {
+    tgt_temp_ = xd->tgt_temp;
+    changed.tgt_temp = true;
   }
   if (state_ != xd->state) {
     state_ = xd->state;
