@@ -38,5 +38,7 @@ config_schema:
   - ["report_on_change", "b", true, {title: "Report if data changes"}]
   - ["report_interval", "i", 60, {title: "Report at this interval"}]
   - ["hub_address", "s", "", {title: "Relay to this address"}]
+  - ["max_packets", "i", 1, {title: "Max number of data packets to send at once"}]
+  - ["max_packet_size", "i", 1000, {title: "Max size of individual data packet"}]
 
 manifest_version: 2017-06-29

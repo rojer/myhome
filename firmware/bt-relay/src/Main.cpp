@@ -75,13 +75,12 @@ static void GAPHandler(int ev, void *ev_data, void *userdata) {
   (void) userdata;
 }
 
-static constexpr size_t kMaxPackets = 5;
-static constexpr size_t kMaxPacketSize = 1000;
-
 static void StatusTimerCB() {
   double now = mgos_uptime();
   size_t num_packets = 0, total_size = 0;
   std::string packet;
+  const size_t kMaxPackets = mgos_sys_config_get_max_packets();
+  const size_t kMaxPacketSize = mgos_sys_config_get_max_packet_size();
 
   auto send_packet = [&packet, &num_packets, &total_size]() {
     if (packet.empty()) return;
@@ -123,7 +122,7 @@ static void StatusTimerCB() {
     if (data.empty() && reported_age > mgos_sys_config_get_report_interval()) {
       ss.Report(BTSensor::kReportAll);
     }
-    while (num_packets < kMaxPacketSize && !data.empty()) {
+    while (num_packets < kMaxPackets && !data.empty()) {
       const std::string &data_json = data.front().ToJSON();
       if (packet.size() + data_json.size() > kMaxPacketSize) {
         send_packet();
