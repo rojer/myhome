@@ -75,6 +75,8 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
          ConvTemp(xd->tgt_temp), xd->ToString().c_str()));
     // We remember the bogus value so we can detect (2).
     bogus_tgt_temp_ = xd->tgt_temp;
+  } else {
+    bogus_tgt_temp_ = 0;
   }
   if (temp_ != xd->temp && bogus_tgt_temp_ == 0) {
     temp_ = xd->temp;
