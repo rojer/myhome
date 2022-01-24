@@ -36,8 +36,8 @@ class Control {
   std::vector<Limit *> limits_;
   std::vector<Output *> outputs_;
   mgos::Timer eval_timer_;
-  double last_action_ts_;
-  double last_eval_;
+  double last_action_ts_ = 0.0;
+  double last_eval_ = 0.0;
 };
 
 bool HubControlGetHeaterStatus(bool *heater_on, double *last_action_ts);
