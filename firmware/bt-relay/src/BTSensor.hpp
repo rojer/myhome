@@ -13,7 +13,7 @@ class BTSensor {
     kNone = 0,
     kXavax = 1,
     kASensor = 2,
-    kMiATS = 3,
+    kMi = 3,
   };
 
   struct Data {

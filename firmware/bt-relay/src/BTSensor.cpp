@@ -4,6 +4,7 @@
 
 #include "BTSensorASensor.hpp"
 #include "BTSensorMiATS.hpp"
+#include "BTSensorMiPVVX.hpp"
 #include "BTSensorXavax.hpp"
 
 BTSensor::BTSensor(const mgos::BTAddr &addr, Type type)
@@ -71,6 +72,8 @@ std::unique_ptr<BTSensor> CreateBTSensor(const mgos::BTAddr &addr,
     res.reset(new BTSensorXavax(addr));
   } else if (BTSensorMiATS::Taste(addr, adv_data)) {
     res.reset(new BTSensorMiATS(addr));
+  } else if (BTSensorMiPVVX::Taste(addr, adv_data)) {
+    res.reset(new BTSensorMiPVVX(addr));
   }
   return std::move(res);
 }

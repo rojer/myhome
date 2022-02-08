@@ -29,15 +29,12 @@ bool BTSensorMiATS::Taste(const mgos::BTAddr &addr,
                           const struct mg_str &adv_data) {
   const struct AdvDataMiATS *ad = (const struct AdvDataMiATS *) adv_data.p;
   if (adv_data.len != sizeof(*ad)) return false;
-  if (addr.addr[0] != 0xa4 || addr.addr[1] != 0xc1 || addr.addr[2] != 0x38) {
-    return false;
-  }
-  if (mgos::BTAddr(ad->addr, false) != addr) return false;
+  if (mgos::BTAddr(ad->addr, false /* reverse */) != addr) return false;
   return true;
 }
 
 BTSensorMiATS::BTSensorMiATS(const mgos::BTAddr &addr)
-    : BTSensor(addr, Type::kMiATS) {
+    : BTSensor(addr, Type::kMi) {
 }
 
 BTSensorMiATS::~BTSensorMiATS() {
