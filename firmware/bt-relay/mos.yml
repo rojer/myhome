@@ -42,4 +42,7 @@ config_schema:
   - ["max_packet_size", "i", 1000, {title: "Max size of individual data packet"}]
   - ["scan_duration_ms", "i", 5000, {title: "Single scan duration"}]
 
+build_vars:
+  MGOS_ROOT_FS_TYPE: LFS
+
 manifest_version: 2017-06-29

@@ -11,4 +11,5 @@
   "e0:e5:cf:b0:0d:07": { "name": "2 Guest bedroom", "sid": 28314887, "target_temp": 11.5 },
   "e0:e5:cf:e4:22:cf": { "name": "2 Man Cave",      "sid": 31728335, "target_temp": 22.5 },
   "80:60:1f:94:3d:c6": { "name": "1 Bathroom 2",    "sid": 31728335, "target_temp": 21.5 }
+  "5c:f8:21:ed:8c:f4": { "name": "1 Bedroom 2",     "sid": 32345332, "target_temp": 21.5 }
 }
