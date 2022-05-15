@@ -58,10 +58,9 @@ void BTSensorMiPVVX::Update(const struct mg_str &adv_data, int8_t rssi) {
   union ReportData changed;
   const struct AdvDataMiPVVX *ad = (const struct AdvDataMiPVVX *) adv_data.p;
   if (ad->ctr != ctr_) {
-    LOG(LL_DEBUG,
-        ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d", addr_.ToString().c_str(),
-         ad->temp, ad->rh_pct, ad->batt_pct,
-         ad->batt_mv, ad->ctr, changed.value));
+    LOG(LL_DEBUG, ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d",
+                   addr_.ToString().c_str(), ad->temp, ad->rh_pct, ad->batt_pct,
+                   ad->batt_mv, ad->ctr, changed.value));
     if (ad->temp != temp_) {
       temp_ = ad->temp;
       changed.temp = true;

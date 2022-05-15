@@ -19,14 +19,14 @@ std::map<mgos::BTAddr, std::unique_ptr<BTSensor>> s_sensors;
 
 static void StartScan() {
   if (s_scanning) return;
-  static bool s_active = false;
-  LOG(LL_DEBUG, ("Starting scan act %d ns %d hf %d", s_active,
-                 (int) s_sensors.size(), (int) mgos_get_free_heap_size()));
+  if (mgos_sys_config_get_scan_duration_ms() <= 0) return;
+  LOG(LL_DEBUG, ("Starting scan ns %d hf %d", (int) s_sensors.size(),
+                 (int) mgos_get_free_heap_size()));
   struct mgos_bt_gap_scan_opts opts = {
       .duration_ms = 5000,
-      .active = s_active,
+      .active = false,
       .interval_ms = 0,  // Default
-      .window_ms = 0,  // Default
+      .window_ms = 0,    // Default
   };
   s_scanning = mgos_bt_gap_scan(&opts);
 }

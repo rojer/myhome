@@ -1,7 +1,7 @@
 author: mongoose-os
 platform: esp32
-description: BT -> TCP relay
-version: 1.3.0
+description: BT -> mgRPC relay
+version: 1.4.0
 
 #libs_version: 2.12.1
 #modules_version: 2.12.1
@@ -40,5 +40,6 @@ config_schema:
   - ["hub_address", "s", "", {title: "Relay to this address"}]
   - ["max_packets", "i", 1, {title: "Max number of data packets to send at once"}]
   - ["max_packet_size", "i", 1000, {title: "Max size of individual data packet"}]
+  - ["scan_duration_ms", "i", 5000, {title: "Single scan duration"}]
 
 manifest_version: 2017-06-29
