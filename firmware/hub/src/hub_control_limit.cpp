@@ -1,8 +1,8 @@
-#include "hub_control_limit.h"
+#include "hub_control_limit.hpp"
 
 #include "mgos.h"
 
-#include "hub.h"
+#include "hub_data.hpp"
 
 Limit::Limit(int id, struct mgos_config_hub_control_limit *l)
     : id_(id), l_(l), on_(false), last_change_(0) {
@@ -86,12 +86,12 @@ bool Limit::Eval() {
   double age;
   bool want_on = false;
   bool enabled = l_->enable;
-  struct sensor_data sd = {};
+  struct SensorData sd;
   if (!IsValid()) return false;
 
   if (enabled && l_->sid == 0) {
     struct tm now = {};
-    struct sensor_data sd = {};
+    struct SensorData sd;
     time_t now_ts = mg_time();
     // Disable during the day when it's warm outside.
     if (hub_get_data(2, 0, &sd) && localtime_r(&now_ts, &now) != nullptr) {

@@ -8,8 +8,8 @@
 #include "mgos_timers.h"
 #include "mgos_wifi.h"
 
-#include "hub.h"
-#include "hub_control.h"
+#include "hub_control.hpp"
+#include "hub_data.hpp"
 
 static int s_sl_gpio = -1;
 

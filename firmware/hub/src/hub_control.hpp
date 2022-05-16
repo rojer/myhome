@@ -5,8 +5,8 @@
 
 #include "mgos_timers.hpp"
 
-#include "hub_control_limit.h"
-#include "hub_control_output.h"
+#include "hub_control_limit.hpp"
+#include "hub_control_output.hpp"
 
 class Control {
  public:

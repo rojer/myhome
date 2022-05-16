@@ -1,8 +1,8 @@
-#include "hub_control_output.h"
+#include "hub_control_output.hpp"
 
 #include "mgos.h"
 
-#include "hub.h"
+#include "hub_data.hpp"
 
 Output::Output(struct mgos_config_hub_control_output *o)
     : o_(o), on_(false), last_change_(0) {

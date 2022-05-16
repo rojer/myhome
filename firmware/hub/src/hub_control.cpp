@@ -1,4 +1,4 @@
-#include "hub_control.h"
+#include "hub_control.hpp"
 
 #include <math.h>
 #include <time.h>
@@ -8,9 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "common/cs_dbg.h"
-#include "common/cs_time.h"
-#include "hub.h"
 #include "mgos.hpp"
 #include "mgos_crontab.h"
 #include "mgos_gpio.h"
@@ -18,8 +15,9 @@
 #include "mgos_sys_config.h"
 #include "mgos_timers.h"
 
-#include "hub_control_limit.h"
-#include "hub_control_output.h"
+#include "hub_control_limit.hpp"
+#include "hub_control_output.hpp"
+#include "hub_data.hpp"
 
 #define NUM_LIMITS 20
 #define NUM_OUTPUTS 10
@@ -173,7 +171,7 @@ void Control::Eval(bool force) {
     if (s_deadline != 0) return;  // Heater is under manual control.
     if (now - last_eval_ < cfg_->eval_interval && !force) return;
     for (Limit *l : limits_) {
-      struct sensor_data sd;
+      struct SensorData sd;
       uint8_t sensor_type = (l->sid() >> 24);
       // For Xavax sensors, update thresholds from target temperature.
       if (sensor_type == 1 && hub_get_data(l->sid(), 1, &sd)) {
