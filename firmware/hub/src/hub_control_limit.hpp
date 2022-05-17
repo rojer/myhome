@@ -7,8 +7,9 @@ struct mgos_config_hub_control_limit;
 
 class Limit {
  public:
-  explicit Limit(int id, struct mgos_config_hub_control_limit *l);
-  static std::set<std::string> ParseOutputsStr(const std::string &out);
+  Limit(int id, struct mgos_config_hub_control_limit *l);
+
+  static std::set<std::string> ParseCommaStr(const std::string &out);
 
   int id() const;
   int sid() const;
@@ -21,12 +22,19 @@ class Limit {
   void set_min(double min);
   double max() const;
   void set_max(double max);
-  std::string out() const;
+  bool invert() const;
+  void set_invert(bool invert);
+  std::string DepsStr() const;
+  void set_deps(const std::string &out);
+  std::string OutStr() const;
   void set_out(const std::string &out);
 
+  std::string ToString() const;
+
+  std::set<std::string> deps() const;
   std::set<std::string> outputs() const;
   bool IsValid();
-  bool Eval();
+  bool Eval(bool quiet = false);
 
  private:
   const int id_;

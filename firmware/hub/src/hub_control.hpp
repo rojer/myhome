@@ -30,6 +30,7 @@ class Control {
                                    struct mg_str args);
 
  private:
+  Limit *GetLimitByID(const std::string &id) const;
   Output *GetOutputByNameOrID(const std::string &name_or_id) const;
 
   struct mgos_config_hub_control *cfg_;

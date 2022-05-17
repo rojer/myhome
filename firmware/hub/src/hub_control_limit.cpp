@@ -1,14 +1,20 @@
 #include "hub_control_limit.hpp"
 
-#include "mgos.h"
+#include "mgos.hpp"
 
 #include "hub_data.hpp"
 
 Limit::Limit(int id, struct mgos_config_hub_control_limit *l)
     : id_(id), l_(l), on_(false), last_change_(0) {
   if (!IsValid()) return;
-  LOG(LL_INFO, ("Limit %d/%d: en %d, min %.2lf max %.2lf, out %s", l_->sid,
-                l_->subid, l_->enable, l_->min, l_->max, l_->out));
+  LOG(LL_INFO, ("Limit %s", ToString().c_str()));
+}
+
+std::string Limit::ToString() const {
+  return mgos::SPrintf(
+      "[%d %d/%d en %d %.2lf-%.2lf inv %d deps %s out %s; on %d]", id(), sid(),
+      subid(), enable(), min(), max(), invert(), DepsStr().c_str(),
+      OutStr().c_str(), on_);
 }
 
 int Limit::id() const {
@@ -55,20 +61,40 @@ void Limit::set_max(double max) {
   l_->max = max;
 }
 
-std::string Limit::out() const {
-  return (l_->out != nullptr ? std::string(l_->out) : "");
+bool Limit::invert() const {
+  return l_->invert;
+}
+
+void Limit::set_invert(bool invert) {
+  l_->invert = invert;
+}
+
+std::string Limit::DepsStr() const {
+  return (l_->deps != nullptr ? l_->deps : "");
+}
+
+void Limit::set_deps(const std::string &deps) {
+  mgos_conf_set_str(&l_->deps, deps.c_str());
+}
+
+std::string Limit::OutStr() const {
+  return (l_->out != nullptr ? l_->out : "");
 }
 
 void Limit::set_out(const std::string &out) {
   mgos_conf_set_str(&l_->out, out.c_str());
 }
 
+std::set<std::string> Limit::deps() const {
+  return ParseCommaStr(DepsStr());
+}
+
 std::set<std::string> Limit::outputs() const {
-  return ParseOutputsStr(out());
+  return ParseCommaStr(OutStr());
 }
 
 // static
-std::set<std::string> Limit::ParseOutputsStr(const std::string &out) {
+std::set<std::string> Limit::ParseCommaStr(const std::string &out) {
   std::set<std::string> outputs;
   const char *p = out.c_str();
   struct mg_str e;
@@ -79,49 +105,69 @@ std::set<std::string> Limit::ParseOutputsStr(const std::string &out) {
 }
 
 bool Limit::IsValid() {
-  return sid() >= 0 && subid() >= 0 && outputs().size() > 0;
+  return sid() >= 0 && subid() >= 0 && min() <= max();
 }
 
-bool Limit::Eval() {
+bool Limit::Eval(bool quiet) {
   double age;
   bool want_on = false;
   bool enabled = l_->enable;
   struct SensorData sd;
   if (!IsValid()) return false;
 
-  if (enabled && l_->sid == 0) {
-    struct tm now = {};
-    struct SensorData sd;
-    time_t now_ts = mg_time();
-    // Disable during the day when it's warm outside.
-    if (hub_get_data(2, 0, &sd) && localtime_r(&now_ts, &now) != nullptr) {
-      if (now.tm_hour > 10 && now.tm_hour < 18 && sd.value > 11.0) {
-        LOG(LL_INFO, ("It's warm, disabling hall heating"));
-        enabled = false;
-      }
-    }
-  }
-
   if (!enabled) {
     want_on = false;
   } else if (!hub_get_data(l_->sid, l_->subid, &sd)) {
-    LOG(LL_INFO, ("S%d/%d: no data yet", l_->sid, l_->subid));
+    if (!quiet) {
+      LOG(LL_INFO, ("S%d/%d: no data yet", l_->sid, l_->subid));
+    }
     want_on = false;
   } else if ((age = cs_time() - sd.ts) > 300) {
-    LOG(LL_INFO, ("S%d/%d: data is stale (%.3lf old)", sd.sid, sd.subid, age));
+    if (!quiet) {
+      LOG(LL_INFO,
+          ("S%d/%d: data is stale (%.3lf old)", sd.sid, sd.subid, age));
+    }
     want_on = false;
-  } else if (!on_ && sd.value < l_->min) {
-    LOG(LL_INFO,
-        ("S%d/%d: %.3lf < %.3lf", sd.sid, sd.subid, sd.value, l_->min));
-    want_on = true;
-  } else if (on_ && sd.value < l_->max) {
-    LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
-                  "Not ok", sd.value, l_->min, l_->max));
-    want_on = true;
+  } else if (invert()) {
+    if (!on_ && sd.value > max()) {
+      if (!quiet) {
+        LOG(LL_INFO,
+            ("S%d/%d: %.3lf > %.3lf", sd.sid, sd.subid, sd.value, max()));
+      }
+      want_on = true;
+    } else if (on_ && sd.value > min()) {
+      if (!quiet) {
+        LOG(LL_INFO, ("S%d/%d: %s !(%.3lf; min %.3lf max %.3lf)", sd.sid,
+                      sd.subid, "Not ok", sd.value, min(), max()));
+      }
+      want_on = true;
+    } else {
+      if (!quiet) {
+        LOG(LL_INFO, ("S%d/%d: %s !(%.3lf; min %.3lf max %.3lf)", sd.sid,
+                      sd.subid, "Ok", sd.value, min(), max()));
+      }
+      want_on = false;
+    }
   } else {
-    LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid, sd.subid,
-                  "Ok", sd.value, l_->min, l_->max));
-    want_on = false;
+    if (!on_ && sd.value < l_->min) {
+      if (!quiet) {
+        LOG(LL_INFO,
+            ("S%d/%d: %.3lf < %.3lf", sd.sid, sd.subid, sd.value, l_->min));
+      }
+      want_on = true;
+    } else if (on_ && sd.value < l_->max) {
+      if (!quiet) {
+        LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid,
+                      sd.subid, "Not ok", sd.value, l_->min, l_->max));
+      }
+      want_on = true;
+    } else {
+      if (!quiet) {
+        LOG(LL_INFO, ("S%d/%d: %s (%.3lf; min %.3lf max %.3lf)", sd.sid,
+                      sd.subid, "Ok", sd.value, l_->min, l_->max));
+      }
+      want_on = false;
+    }
   }
 
   if (want_on != on_) {

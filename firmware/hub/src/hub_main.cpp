@@ -1,12 +1,14 @@
 #include "common/cs_dbg.h"
 
-#include "mgos.h"
+#include "mgos.hpp"
 #include "mgos_app.h"
 #include "mgos_gpio.h"
 #include "mgos_sys_config.h"
 #include "mgos_time.h"
 #include "mgos_timers.h"
+#ifdef MGOS_HAVE_WIFI
 #include "mgos_wifi.h"
+#endif
 
 #include "hub_control.hpp"
 #include "hub_data.hpp"
@@ -17,7 +19,7 @@ static void blink_off(void *arg) {
   mgos_gpio_write((intptr_t) arg, 0);
 }
 
-static void status_timer_cb(void *arg) {
+static void status_timer_cb(void *arg UNUSED_ARG) {
   double now = mg_time();
   int sys_sid = mgos_sys_config_get_hub_sys_sid();
   if (s_sl_gpio >= 0) {
@@ -35,6 +37,7 @@ static void status_timer_cb(void *arg) {
   report_to_server(sys_sid, UPTIME_SUBID, now, mgos_uptime());
   report_to_server(sys_sid, HEAP_FREE_SUBID, now, mgos_get_free_heap_size());
 
+#ifdef MGOS_HAVE_WIFI
   {
     static double s_last_connected = 0;
     double now_uptime = mgos_uptime();
@@ -46,7 +49,7 @@ static void status_timer_cb(void *arg) {
       mgos_system_restart_after(500);
     }
   }
-  (void) arg;
+#endif
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
@@ -65,8 +68,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   if (mgos_sys_config_get_hub_status_interval() > 0) {
     s_sl_gpio = mgos_sys_config_get_hub_status_led_gpio();
     if (s_sl_gpio >= 0) {
-      mgos_gpio_write(s_sl_gpio, 0);
-      mgos_gpio_set_mode(s_sl_gpio, MGOS_GPIO_MODE_OUTPUT);
+      mgos_gpio_setup_output(s_sl_gpio, 0);
     }
     mgos_set_timer(mgos_sys_config_get_hub_status_interval() * 1000,
                    MGOS_TIMER_REPEAT, status_timer_cb, NULL);

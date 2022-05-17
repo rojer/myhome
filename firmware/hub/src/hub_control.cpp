@@ -19,7 +19,7 @@
 #include "hub_control_output.hpp"
 #include "hub_data.hpp"
 
-#define NUM_LIMITS 20
+#define NUM_LIMITS 30
 #define NUM_OUTPUTS 10
 
 static bool s_heater_on = false;
@@ -33,107 +33,73 @@ static Control *s_ctl = nullptr;
 
 Control::Control(struct mgos_config_hub_control *cfg)
     : cfg_(cfg), eval_timer_(std::bind(&Control::Eval, this, false)) {
+#define CASE(n)                                         \
+  case n:                                               \
+    ocfg = mgos_sys_config_get_hub_control_output##n(); \
+    break;
   for (int i = 0; i < NUM_OUTPUTS; i++) {
     const struct mgos_config_hub_control_output *ocfg = nullptr;
     switch (i) {
       case 0:
         ocfg = mgos_sys_config_get_hub_control_output();
         break;
-      case 1:
-        ocfg = mgos_sys_config_get_hub_control_output1();
-        break;
-      case 2:
-        ocfg = mgos_sys_config_get_hub_control_output2();
-        break;
-      case 3:
-        ocfg = mgos_sys_config_get_hub_control_output3();
-        break;
-      case 4:
-        ocfg = mgos_sys_config_get_hub_control_output4();
-        break;
-      case 5:
-        ocfg = mgos_sys_config_get_hub_control_output5();
-        break;
-      case 6:
-        ocfg = mgos_sys_config_get_hub_control_output6();
-        break;
-      case 7:
-        ocfg = mgos_sys_config_get_hub_control_output7();
-        break;
-      case 8:
-        ocfg = mgos_sys_config_get_hub_control_output8();
-        break;
-      case 9:
-        ocfg = mgos_sys_config_get_hub_control_output9();
-        break;
+
+        CASE(1)
+        CASE(2)
+        CASE(3)
+        CASE(4)
+        CASE(5)
+        CASE(6)
+        CASE(7)
+        CASE(8)
+        CASE(9)
     }
     outputs_.push_back(
         new Output(const_cast<struct mgos_config_hub_control_output *>(ocfg)));
   }
+#undef CASE
   for (int i = 0; i < NUM_LIMITS; i++) {
     const struct mgos_config_hub_control_limit *lcfg = nullptr;
+#define CASE(n)                                        \
+  case n:                                              \
+    lcfg = mgos_sys_config_get_hub_control_limit##n(); \
+    break;
     switch (i) {
       case 0:
         lcfg = mgos_sys_config_get_hub_control_limit();
         break;
-      case 1:
-        lcfg = mgos_sys_config_get_hub_control_limit1();
-        break;
-      case 2:
-        lcfg = mgos_sys_config_get_hub_control_limit2();
-        break;
-      case 3:
-        lcfg = mgos_sys_config_get_hub_control_limit3();
-        break;
-      case 4:
-        lcfg = mgos_sys_config_get_hub_control_limit4();
-        break;
-      case 5:
-        lcfg = mgos_sys_config_get_hub_control_limit5();
-        break;
-      case 6:
-        lcfg = mgos_sys_config_get_hub_control_limit6();
-        break;
-      case 7:
-        lcfg = mgos_sys_config_get_hub_control_limit7();
-        break;
-      case 8:
-        lcfg = mgos_sys_config_get_hub_control_limit8();
-        break;
-      case 9:
-        lcfg = mgos_sys_config_get_hub_control_limit9();
-        break;
-      case 10:
-        lcfg = mgos_sys_config_get_hub_control_limit10();
-        break;
-      case 11:
-        lcfg = mgos_sys_config_get_hub_control_limit11();
-        break;
-      case 12:
-        lcfg = mgos_sys_config_get_hub_control_limit12();
-        break;
-      case 13:
-        lcfg = mgos_sys_config_get_hub_control_limit13();
-        break;
-      case 14:
-        lcfg = mgos_sys_config_get_hub_control_limit14();
-        break;
-      case 15:
-        lcfg = mgos_sys_config_get_hub_control_limit15();
-        break;
-      case 16:
-        lcfg = mgos_sys_config_get_hub_control_limit16();
-        break;
-      case 17:
-        lcfg = mgos_sys_config_get_hub_control_limit17();
-        break;
-      case 18:
-        lcfg = mgos_sys_config_get_hub_control_limit18();
-        break;
-      case 19:
-        lcfg = mgos_sys_config_get_hub_control_limit19();
-        break;
+
+        CASE(1)
+        CASE(2)
+        CASE(3)
+        CASE(4)
+        CASE(5)
+        CASE(6)
+        CASE(7)
+        CASE(8)
+        CASE(9)
+        CASE(10)
+        CASE(11)
+        CASE(12)
+        CASE(13)
+        CASE(14)
+        CASE(15)
+        CASE(16)
+        CASE(17)
+        CASE(18)
+        CASE(19)
+        CASE(20)
+        CASE(21)
+        CASE(22)
+        CASE(23)
+        CASE(24)
+        CASE(25)
+        CASE(26)
+        CASE(27)
+        CASE(28)
+        CASE(29)
     }
+#undef CASE
     limits_.push_back(
         new Limit(i, const_cast<struct mgos_config_hub_control_limit *>(lcfg)));
   }
@@ -186,6 +152,21 @@ void Control::Eval(bool force) {
       }
       bool want_on = l->Eval();
       if (want_on) {
+        for (const std::string &id : l->deps()) {
+          Limit *dl = GetLimitByID(id);
+          if (dl == nullptr) {
+            LOG(LL_ERROR, ("Invalid dependency %s", id.c_str()));
+            continue;
+          }
+          if (dl->Eval(true /* quiet */)) {
+            LOG(LL_INFO,
+                ("%d: Inhibited by %s", l->id(), dl->ToString().c_str()));
+            want_on = false;
+            break;
+          }
+        }
+      }
+      if (want_on) {
         for (const std::string &name_or_id : l->outputs()) {
           Output *o = GetOutputByNameOrID(name_or_id);
           if (o != nullptr) {
@@ -235,6 +216,15 @@ void Control::ReportOutputs() {
   for (Output *o : outputs_) {
     o->Report();
   }
+}
+
+Limit *Control::GetLimitByID(const std::string &id) const {
+  for (Limit *l : limits_) {
+    if (std::to_string(l->id()) == id) {
+      return l;
+    }
+  }
+  return nullptr;
 }
 
 Output *Control::GetOutputByNameOrID(const std::string &name_or_id) const {
@@ -310,7 +300,7 @@ out:
 
 // static
 void Control::GetLimitsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
-                                  struct mg_rpc_frame_info *fi,
+                                  struct mg_rpc_frame_info *fi UNUSED_ARG,
                                   struct mg_str args) {
   Control *ctl = static_cast<Control *>(cb_arg);
   int sid = -1, subid = -1;
@@ -324,18 +314,17 @@ void Control::GetLimitsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
     if (sid >= 0 && l->sid() != sid) continue;
     if (subid >= 0 && l->subid() != subid) continue;
     if (!first) res.append(", ");
-    const std::string &out_s = l->out();
     mgos::JSONAppendStringf(&res,
                             "{id: %d, sid: %d, subid: %d, enable: %B, "
-                            "min: %.2lf, max: %.2lf, out: %Q}",
+                            "min: %.2lf, max: %.2lf, invert: %B, "
+                            "deps: %Q, out: %Q}",
                             l->id(), l->sid(), l->subid(), l->enable(),
-                            l->min(), l->max(), out_s.c_str());
+                            l->min(), l->max(), l->invert(),
+                            l->DepsStr().c_str(), l->OutStr().c_str());
     first = false;
   }
   res.append("]");
   mg_rpc_send_responsef(ri, "%s", res.c_str());
-
-  (void) fi;
 }
 
 // static
@@ -344,15 +333,15 @@ void Control::SetLimitRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
                                  struct mg_str args) {
   Control *ctl = static_cast<Control *>(cb_arg);
   char *msg = nullptr;
-  int8_t enable = -1;
+  int8_t enable = -1, invert = -1;
   int sid = -1, subid = 0;
   double min = NAN, max = NAN;
-  char *out_s = nullptr;
+  char *deps_s = nullptr, *out_s = nullptr;
 
   json_scanf(args.p, args.len, ri->args_fmt, &sid, &subid, &enable, &min, &max,
-             &out_s);
+             &invert, &deps_s, &out_s);
 
-  std::unique_ptr<char> out_owner(out_s);
+  mgos::ScopedCPtr deps_owner(deps_s), out_owner(out_s);
 
   if (sid < 0) {
     mg_rpc_send_errorf(ri, -1, "sid is required");
@@ -390,8 +379,19 @@ void Control::SetLimitRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
     return;
   }
 
+  if (deps_s != nullptr) {
+    for (const std::string &id : Limit::ParseCommaStr(deps_s)) {
+      Limit *l = ctl->GetLimitByID(id);
+      if (l == nullptr) {
+        mg_rpc_send_errorf(ri, -1, "invalid limit %s", id.c_str());
+        return;
+      }
+    }
+    l->set_deps(deps_s);
+  }
+
   if (out_s != nullptr) {
-    for (const auto &name_or_id : Limit::ParseOutputsStr(out_s)) {
+    for (const std::string &name_or_id : Limit::ParseCommaStr(out_s)) {
       Output *o = ctl->GetOutputByNameOrID(name_or_id);
       if (o == nullptr) {
         mg_rpc_send_errorf(ri, -1, "invalid output %s", name_or_id.c_str());
@@ -405,6 +405,8 @@ void Control::SetLimitRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
   if (enable != -1) l->set_enable(enable);
   if (!isnan(min)) l->set_min(min);
   if (!isnan(max)) l->set_max(max);
+  if (invert != -1) l->set_invert(invert);
+  LOG(LL_INFO, ("Modified limit: %s", l->ToString().c_str()));
 
   if (!mgos_sys_config_save(&mgos_sys_config, false /* try_once */, &msg)) {
     mg_rpc_send_errorf(ri, -1, "error saving config: %s", (msg ? msg : ""));
@@ -421,7 +423,7 @@ void Control::SetLimitRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
 
 // static
 void Control::GetOutputsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
-                                   struct mg_rpc_frame_info *fi,
+                                   struct mg_rpc_frame_info *fi UNUSED_ARG,
                                    struct mg_str args) {
   Control *ctl = static_cast<Control *>(cb_arg);
   int id = -1;
@@ -451,8 +453,6 @@ void Control::GetOutputsRPCHandler(struct mg_rpc_request_info *ri, void *cb_arg,
 
   res.append("]");
   mg_rpc_send_responsef(ri, "%s", res.c_str());
-
-  (void) fi;
 }
 
 static void heater_crontab_cb(struct mg_str action, struct mg_str payload,
@@ -500,7 +500,8 @@ bool HubControlInit() {
                      Control::GetLimitsRPCHandler, s_ctl);
   mg_rpc_add_handler(
       c, "Hub.Control.SetLimit",
-      "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf, out: %Q}",
+      "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf, invert: %B, "
+      "deps: %Q, out: %Q}",
       Control::SetLimitRPCHandler, s_ctl);
   mg_rpc_add_handler(c, "Hub.Control.GetOutputs", "{id: %d, name: %Q}",
                      Control::GetOutputsRPCHandler, s_ctl);
@@ -514,7 +515,8 @@ bool HubControlInit() {
                      Control::GetLimitsRPCHandler, s_ctl);
   mg_rpc_add_handler(
       c, "Hub.Heater.SetLimits",
-      "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf, out: %Q}",
+      "{sid: %d, subid: %d, enable: %B, min: %lf, max: %lf, invert: %B, "
+      "deps: %Q, out: %Q}",
       Control::SetLimitRPCHandler, s_ctl);
 
   mgos_crontab_register_handler(mg_mk_str("heater_on"), heater_crontab_cb,

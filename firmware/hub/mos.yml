@@ -1,6 +1,6 @@
 name: hub
 platform: esp32
-version: 2.11.0
+version: 2.12.0
 
 libs_version: latest
 modules_version: latest
@@ -34,7 +34,9 @@ config_schema:
   - ["hub.control.limit.enable", "b", false, {"title": "Enable this entry"}]
   - ["hub.control.limit.min", "d", 0.0, {"title": "Min threshold"}]
   - ["hub.control.limit.max", "d", 0.0, {"title": "Max threshold"}]
-  - ["hub.control.limit.out", "s", "0", {"title": "Output(s) that this limit controls"}]
+  - ["hub.control.limit.invert", "b", false, {"title": "Invert logic: going above max is not ok"}]
+  - ["hub.control.limit.deps", "s", "", {"title": "Limits(s) that must eval to ok; comma-separated list of limit ids"}]
+  - ["hub.control.limit.out", "s", "", {"title": "Output(s) that this limit controls; comma-separated list of output ids"}]
   - ["hub.control.limit1", "hub.control.limit", {"title": "Limits 1"}]
   - ["hub.control.limit2", "hub.control.limit", {"title": "Limits 2"}]
   - ["hub.control.limit3", "hub.control.limit", {"title": "Limits 3"}]
@@ -54,6 +56,16 @@ config_schema:
   - ["hub.control.limit17", "hub.control.limit", {"title": "Limits 17"}]
   - ["hub.control.limit18", "hub.control.limit", {"title": "Limits 18"}]
   - ["hub.control.limit19", "hub.control.limit", {"title": "Limits 19"}]
+  - ["hub.control.limit20", "hub.control.limit", {"title": "Limits 20"}]
+  - ["hub.control.limit21", "hub.control.limit", {"title": "Limits 21"}]
+  - ["hub.control.limit22", "hub.control.limit", {"title": "Limits 22"}]
+  - ["hub.control.limit23", "hub.control.limit", {"title": "Limits 23"}]
+  - ["hub.control.limit24", "hub.control.limit", {"title": "Limits 24"}]
+  - ["hub.control.limit25", "hub.control.limit", {"title": "Limits 25"}]
+  - ["hub.control.limit26", "hub.control.limit", {"title": "Limits 26"}]
+  - ["hub.control.limit27", "hub.control.limit", {"title": "Limits 27"}]
+  - ["hub.control.limit28", "hub.control.limit", {"title": "Limits 28"}]
+  - ["hub.control.limit29", "hub.control.limit", {"title": "Limits 29"}]
   - ["hub.control.output", "o", {"title": "Output 0"}]
   - ["hub.control.output.id", "i", -1, {"title": "Output ID"}]
   - ["hub.control.output.name", "s", "", {"title": "Name"}]
@@ -108,6 +120,10 @@ conds:
         - origin: https://github.com/mongoose-os-libs/wifi
       config_schema:
         - ["i2c.enable", true]
+  - when: mos.platform == "ubuntu"
+    apply:
+      filesystem:
+        - fs_test
 
 cdefs:
   # Workaround for https://github.com/espressif/esp-idf/issues/1445

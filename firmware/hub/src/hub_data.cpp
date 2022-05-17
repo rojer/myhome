@@ -199,12 +199,7 @@ static bool parse_data_point(struct mg_rpc_request_info *ri, struct mg_str s,
     }
   }
 
-  struct SensorData sd = {
-      .sid = sid,
-      .subid = subid,
-      .ts = ts,
-      .value = value,
-  };
+  struct SensorData sd(sid, subid, ts, value);
   if (name != nullptr) {
     sd.name = name;
   }
