@@ -5,6 +5,7 @@
 #include "mgos_lolin_button.h"
 #include "mgos_rpc.h"
 #include "mgos_veml7700.h"
+#include "mgos_wifi.h"
 
 #include "bme680.h"
 #include "ds18b20.h"
@@ -109,26 +110,12 @@ static void read_sensors(void) {
   mgos_gpio_toggle(LED_GPIO);
 }
 
-static void sensor_timer_cb(void *arg) {
+static void sensor_timer_cb(void *arg UNUSED_ARG) {
   read_sensors();
-  (void) arg;
 }
 
-static void btn_cb(int pin, void *arg) {
+static void btn_cb(int pin UNUSED_ARG, void *arg UNUSED_ARG) {
   read_sensors();
-  (void) pin;
-  (void) arg;
-}
-
-// Workaround for https://github.com/cesanta/mongoose-os/issues/468
-static void set_timer(void *arg) {
-  mgos_set_timer(1000, 0, sensor_timer_cb, arg);
-}
-
-static void time_change_cb(int ev, void *evd, void *arg) {
-  mgos_invoke_cb(set_timer, arg, false);
-  (void) ev;
-  (void) evd;
 }
 
 bool bme680_probe(int addr) {
@@ -221,7 +208,7 @@ static void bme680_output_cb(int ev, void *ev_data, void *arg) {
   (void) arg;
 }
 
-static void lolin_button_handler(int ev, void *ev_data, void *userdata) {
+static void lolin_button_handler(int ev, void *ev_data, void *ud UNUSED_ARG) {
   const struct mgos_lolin_button_status *bs =
       (const struct mgos_lolin_button_status *) ev_data;
   const char *bn = NULL;
@@ -254,29 +241,42 @@ static void lolin_button_handler(int ev, void *ev_data, void *userdata) {
       break;
   }
   LOG(LL_INFO, ("Button %s %s", bn, sn));
-  (void) userdata;
 }
 
 struct mgos_veml7700 *s_veml7700 = NULL;
 
-void veml7700_timer(void *arg) {
+void veml7700_timer(void *arg UNUSED_ARG) {
   float lux_als = mgos_veml7700_read_lux_als(s_veml7700, true /* adjust */);
   float lux_white = mgos_veml7700_read_lux_white(s_veml7700, true /* adjust */);
   if (lux_als >= 0 && lux_white >= 0) {
     LOG(LL_INFO, ("%.3f lux ALS %.3f lux white", lux_als, lux_white));
   }
-  (void) arg;
 }
 
 static void get_lux_handler(struct mg_rpc_request_info *ri,
-                                    void *cb_arg, struct mg_rpc_frame_info *fi,
-                                    struct mg_str args) {
+                            void *cb_arg UNUSED_ARG,
+                            struct mg_rpc_frame_info *fi UNUSED_ARG,
+                            struct mg_str args UNUSED_ARG) {
   float lux_als = mgos_veml7700_read_lux_als(s_veml7700, true /* adjust */);
   float lux_white = mgos_veml7700_read_lux_white(s_veml7700, true /* adjust */);
-  mg_rpc_send_responsef(ri, "{lux_als: %.3f, lux_white: %.3f}", lux_als, lux_white);
-  (void) cb_arg;
-  (void) fi;
-  (void) args;
+  mg_rpc_send_responsef(ri, "{lux_als: %.3f, lux_white: %.3f}", lux_als,
+                        lux_white);
+}
+
+static void srf05_timer_cb(void *arg UNUSED_ARG) {
+  int sid = mgos_sys_config_get_sensor_id();
+  const char *hub_addr = mgos_sys_config_get_hub_address();
+  float dist = srf05_get_avg();
+  double now = mg_time();
+  LOG(LL_INFO, ("SID %d: %.3f m (last %.3f m) RSSI %d", sid, dist,
+                srf05_get_last(), mgos_wifi_sta_get_rssi()));
+  if (dist <= 0) return;
+  if (sid < 0 || hub_addr == NULL) return;
+  struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
+  const char *name = mgos_sys_config_get_sensor_name();
+  mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
+               &opts, "{sid: %d, subid: %d, st: %Q, name: %Q, ts: %f, v: %.3f}",
+               sid, 30, "SRF05", (name ?: ""), now, dist);
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
@@ -354,7 +354,6 @@ enum mgos_app_init_result mgos_app_init(void) {
     s_st = st;
     mgos_set_timer(mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
                    sensor_timer_cb, NULL);
-    mgos_event_add_handler(MGOS_EVENT_TIME_CHANGED, time_change_cb, NULL);
     mgos_gpio_set_button_handler(BTN_GPIO, MGOS_GPIO_PULL_UP,
                                  MGOS_GPIO_INT_EDGE_NEG, 20, btn_cb, NULL);
   }
@@ -365,19 +364,22 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_event_add_group_handler(MGOS_EV_LOLIN_BUTTON_BASE, lolin_button_handler,
                                NULL);
 
-  srf05_init(mgos_sys_config_get_sensor_id(),
-             mgos_sys_config_get_srf05_trig_pin(),
-             mgos_sys_config_get_srf05_echo_pin());
+  if (srf05_init(mgos_sys_config_get_sensor_id(),
+                 mgos_sys_config_get_srf05_trig_pin(),
+                 mgos_sys_config_get_srf05_echo_pin())) {
+    mgos_set_timer(mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
+                   srf05_timer_cb, NULL);
+  }
 
   if (mgos_veml7700_detect(mgos_i2c_get_bus(0))) {
     s_veml7700 = mgos_veml7700_create(mgos_i2c_get_bus(0));
     bool res = mgos_veml7700_set_cfg(
-        s_veml7700,
-        MGOS_VEML7700_CFG_ALS_IT_100 | MGOS_VEML7700_CFG_ALS_GAIN_1,
+        s_veml7700, MGOS_VEML7700_CFG_ALS_IT_100 | MGOS_VEML7700_CFG_ALS_GAIN_1,
         MGOS_VEML7700_PSM_0);
     LOG(LL_INFO, ("Detected VEML7700, config %d", res));
     mgos_set_timer(1000, MGOS_TIMER_REPEAT, veml7700_timer, NULL);
-    mg_rpc_add_handler(mgos_rpc_get_global(), "Sensor.GetLux", "", get_lux_handler, NULL);
+    mg_rpc_add_handler(mgos_rpc_get_global(), "Sensor.GetLux", "",
+                       get_lux_handler, NULL);
   }
 
   return MGOS_APP_INIT_SUCCESS;
