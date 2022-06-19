@@ -1,7 +1,7 @@
 author: rojer
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.11.0
+version: 2.12.0
 
 libs_version: latest
 modules_version: latest
@@ -62,5 +62,11 @@ config_schema:
   - ["provision.led.pin", -1]
   - ["provision.led.active_high", false]
   - ["provision.stable_state", 2]
+
+conds:
+  - when: mos.platform == "esp32"
+    apply:
+      libs:
+        - origin: https://github.com/mongoose-os-libs/ethernet
 
 manifest_version: 2017-06-29
