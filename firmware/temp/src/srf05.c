@@ -7,11 +7,15 @@
 
 #include "mgos.h"
 
+#define INVALID_VALUE -1000.0
+
 #define NUM_READINGS 8
 static int s_idx = 0;
 static float s_readings[NUM_READINGS] = {0};
 static float s_last = 0.0;
 static int64_t s_start = 0, s_end = 0;
+
+extern float get_last_temp(void);
 
 static IRAM void srf05_echo_int_handler(int pin, void *arg UNUSED_ARG) {
   if (mgos_gpio_read(pin)) {
@@ -38,7 +42,10 @@ float srf05_get_avg(void) {
 }
 
 static void srf05_timer_cb(void *arg) {
-  float temp = mgos_sys_config_get_srf05_temp();
+  float temp = get_last_temp();
+  if (temp == INVALID_VALUE) {
+    temp = mgos_sys_config_get_srf05_temp();
+  }
   float etime = 0, speed = 0, dist = 0;
   if (s_end > 0) {
     etime = (s_end - s_start) / 1000000.0f;

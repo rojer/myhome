@@ -19,7 +19,8 @@
 
 int s_addr = 0;
 static const char *s_st = NULL;
-static void (*s_read_func)(int addr, float *temp, float *rh) = NULL;
+static float s_last_temp = INVALID_VALUE;
+static void (*s_temp_read_func)(int addr, float *temp, float *rh) = NULL;
 
 static const char *s_light_st = NULL;
 static struct mgos_bh1750 *s_bh = NULL;
@@ -33,12 +34,17 @@ static void si7005_read(int addr, float *temp, float *rh) {
 #define BTN_GPIO 0
 #define LED_GPIO 2
 
+float get_last_temp(void) {
+  return s_last_temp;
+}
+
 static void read_temp_sensor(void) {
   int sid = mgos_sys_config_get_sensor_id();
   const char *hub_addr = mgos_sys_config_get_hub_address();
   float temp = INVALID_VALUE, rh = INVALID_VALUE;
-  if (s_read_func == NULL) return;
-  s_read_func(s_addr, &temp, &rh);
+  if (s_temp_read_func == NULL) return;
+  s_temp_read_func(s_addr, &temp, &rh);
+  s_last_temp = temp;
   bool have_temp = (temp != INVALID_VALUE);
   bool have_rh = (rh != INVALID_VALUE);
   LOG(LL_INFO, ("SID %d ST %s T %.2f RH %.2f", sid, s_st, temp, rh));
@@ -303,21 +309,21 @@ enum mgos_app_init_result mgos_app_init(void) {
     if (si7005_probe()) {
       LOG(LL_INFO, ("Si7005 sensor found"));
       si7005_set_heater(false);
-      s_read_func = si7005_read;
+      s_temp_read_func = si7005_read;
     } else {
       LOG(LL_ERROR, ("Si7005 sensor not found"));
     }
   } else if (strcmp(st, "SHT3x") == 0) {
     if (sht3x_probe(&s_addr)) {
       LOG(LL_INFO, ("SHT3x sensor found @ %#02x", s_addr));
-      s_read_func = sht3x_read;
+      s_temp_read_func = sht3x_read;
     } else {
       LOG(LL_ERROR, ("SHT31 sensor not found"));
     }
   } else if (strcmp(st, "DS18B20") == 0) {
     if (ds18b20_probe()) {
       LOG(LL_INFO, ("DS18B20 sensor found"));
-      s_read_func = ds18b20_read;
+      s_temp_read_func = ds18b20_read;
     } else {
       LOG(LL_ERROR, ("DS18B20 sensor not found"));
     }
@@ -350,7 +356,7 @@ enum mgos_app_init_result mgos_app_init(void) {
                            mgos_sys_config_get_bh1750_mtime());
   }
 
-  if (s_read_func != NULL || s_bh != NULL) {
+  if (s_temp_read_func != NULL || s_bh != NULL) {
     s_st = st;
     mgos_set_timer(mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
                    sensor_timer_cb, NULL);
