@@ -41,6 +41,16 @@ float srf05_get_avg(void) {
   return (i > 0 ? sum / i : 0);
 }
 
+float srf05_get_max(void) {
+  float max = 0;
+  for (int i = 0; i < NUM_READINGS; i++) {
+    if (s_readings[i] > max) {
+      max = s_readings[i];
+    }
+  }
+  return max;
+}
+
 static void srf05_timer_cb(void *arg) {
   float temp = get_last_temp();
   if (temp == INVALID_VALUE) {
@@ -57,8 +67,9 @@ static void srf05_timer_cb(void *arg) {
   }
   s_readings[s_idx++] = s_last;
   s_idx %= NUM_READINGS;
-  LOG(LL_DEBUG, ("Etime %f s, t %.2f, sp %.2f, dist %.2f m, avg %.2f m", etime,
-                 temp, speed, srf05_get_last(), srf05_get_avg()));
+  LOG(LL_DEBUG,
+      ("Etime %f s, t %.2f, sp %.2f, last %.3f m, max %.3f m, avg %.3f m",
+       etime, temp, speed, srf05_get_last(), srf05_get_max(), srf05_get_avg()));
   s_start = s_end = 0;
   int trig_pin = (intptr_t) arg;
   mgos_gpio_write(trig_pin, 1);
@@ -74,7 +85,7 @@ bool srf05_init(int sid, int trig_pin, int echo_pin) {
   mgos_gpio_set_int_handler_isr(echo_pin, MGOS_GPIO_INT_EDGE_ANY,
                                 srf05_echo_int_handler, NULL);
   mgos_gpio_enable_int(echo_pin);
-  mgos_set_timer(1000, MGOS_TIMER_REPEAT, srf05_timer_cb,
+  mgos_set_timer(10000, MGOS_TIMER_REPEAT, srf05_timer_cb,
                  (void *) (intptr_t) trig_pin);
   return true;
 }

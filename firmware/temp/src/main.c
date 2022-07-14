@@ -272,9 +272,9 @@ static void get_lux_handler(struct mg_rpc_request_info *ri,
 static void srf05_timer_cb(void *arg UNUSED_ARG) {
   int sid = mgos_sys_config_get_sensor_id();
   const char *hub_addr = mgos_sys_config_get_hub_address();
-  float dist = srf05_get_avg();
+  float dist = srf05_get_max();
   double now = mg_time();
-  LOG(LL_INFO, ("SID %d: %.3f m (last %.3f m) RSSI %d", sid, dist,
+  LOG(LL_INFO, ("SID %d: max %.3f m (last %.3f m) RSSI %d", sid, dist,
                 srf05_get_last(), mgos_wifi_sta_get_rssi()));
   if (dist <= 0) return;
   if (sid < 0 || hub_addr == NULL) return;
