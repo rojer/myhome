@@ -9,7 +9,7 @@
 
 #define INVALID_VALUE -1000.0
 
-#define NUM_READINGS 8
+#define NUM_READINGS 60
 static int s_idx = 0;
 static float s_readings[NUM_READINGS] = {0};
 static float s_last = 0.0;
