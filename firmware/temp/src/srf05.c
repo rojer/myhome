@@ -77,7 +77,7 @@ static void srf05_timer_cb(void *arg) {
   mgos_gpio_write(trig_pin, 0);
 }
 
-bool srf05_init(int sid, int trig_pin, int echo_pin) {
+bool srf05_init(int sid, int trig_pin, int echo_pin, int poll_interval_ms) {
   if (trig_pin < 0 || echo_pin < 0) return false;
   LOG(LL_INFO, ("SRF05, TRIG:%d ECHO:%d", trig_pin, echo_pin));
   mgos_gpio_setup_output(trig_pin, 0);
@@ -85,7 +85,7 @@ bool srf05_init(int sid, int trig_pin, int echo_pin) {
   mgos_gpio_set_int_handler_isr(echo_pin, MGOS_GPIO_INT_EDGE_ANY,
                                 srf05_echo_int_handler, NULL);
   mgos_gpio_enable_int(echo_pin);
-  mgos_set_timer(10000, MGOS_TIMER_REPEAT, srf05_timer_cb,
+  mgos_set_timer(poll_interval_ms, MGOS_TIMER_REPEAT, srf05_timer_cb,
                  (void *) (intptr_t) trig_pin);
   return true;
 }

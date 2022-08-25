@@ -285,7 +285,8 @@ static void srf05_timer_cb(void *arg UNUSED_ARG) {
                sid, 30, "SRF05", (name ?: ""), now, dist);
 }
 
-enum mgos_app_init_result mgos_app_init(void) {
+static void init2(void *arg) {
+  LOG(LL_INFO, ("Initializing"));
   int bme680_addr = mgos_sys_config_get_bme680_i2c_addr();
   const char *st = mgos_sys_config_get_sensor_type();
   if (st == NULL) {
@@ -372,7 +373,8 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   if (srf05_init(mgos_sys_config_get_sensor_id(),
                  mgos_sys_config_get_srf05_trig_pin(),
-                 mgos_sys_config_get_srf05_echo_pin())) {
+                 mgos_sys_config_get_srf05_echo_pin(),
+                 mgos_sys_config_get_srf05_poll_interval_ms())) {
     mgos_set_timer(mgos_sys_config_get_interval() * 1000, MGOS_TIMER_REPEAT,
                    srf05_timer_cb, NULL);
   }
@@ -388,5 +390,11 @@ enum mgos_app_init_result mgos_app_init(void) {
                        get_lux_handler, NULL);
   }
 
+  (void) arg;
+}
+
+enum mgos_app_init_result mgos_app_init(void) {
+  // Delay init so we get a chance to connect to network and get remote logging.
+  mgos_set_timer(5000, 0, init2, NULL);
   return MGOS_APP_INIT_SUCCESS;
 }

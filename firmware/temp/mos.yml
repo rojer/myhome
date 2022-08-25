@@ -1,7 +1,7 @@
 author: rojer
 platform: esp8266
 description: Temperature sensor firmware
-version: 2.12.1
+version: 2.13.0
 
 libs_version: latest
 modules_version: latest
@@ -12,7 +12,7 @@ sources:
 filesystem:
   - fs
 libs:
-  - origin: https://github.com/mongoose-os-libs/arduino-dallas-temperature
+  - origin: https://github.com/mongoose-os-libs/ds18b20
   - origin: https://github.com/mongoose-os-libs/dns-sd
   - origin: https://github.com/mongoose-os-libs/bh1750
   - origin: https://github.com/mongoose-os-libs/bme680
@@ -48,7 +48,8 @@ config_schema:
   - ["ssd1306.height", 48]
   - ["ssd1306.col_offset", 32]
   - ["ssd1306.i2c.enable", false]  # Use system bus.
-  - ["ow_gpio", "i", 13, {title: "OneWire bus GPIO"}]
+  - ["ds18b20.enable", false]
+  - ["ds18b20.register_rpc", false]
   - ["sensor_type", "s", "", {title: "Sensor type"}]
   - ["sensor_id", "i", -1, {title: "Sensor ID"}]
   - ["sensor_name", "s", "", {title: "Sensor Name"}]
@@ -57,6 +58,7 @@ config_schema:
   - ["bh1750_mtime", "i", 69, {title: "Measurement time for the BH1750"}]
   - ["srf05_trig_pin", "i", -1, {title: "SRF05 TRIG pin"}]
   - ["srf05_echo_pin", "i", -1, {title: "SRF05 ECHO pin"}]
+  - ["srf05_poll_interval_ms", "i", 10000, {title: "SRF05 poll interval, in milliseconds"}]
   - ["srf05_temp", "f", 20.0, {title: "SRF05 temperature for distance calculations"}]
 
   - ["provision.led.pin", -1]
