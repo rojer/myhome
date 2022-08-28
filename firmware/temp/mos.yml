@@ -58,6 +58,7 @@ config_schema:
   - ["bh1750_mtime", "i", 69, {title: "Measurement time for the BH1750"}]
   - ["srf05_trig_pin", "i", -1, {title: "SRF05 TRIG pin"}]
   - ["srf05_echo_pin", "i", -1, {title: "SRF05 ECHO pin"}]
+  - ["srf05_num_samples", "i", 10, {title: "SRF05 number of samples to keep"}]
   - ["srf05_poll_interval_ms", "i", 10000, {title: "SRF05 poll interval, in milliseconds"}]
   - ["srf05_temp", "f", 20.0, {title: "SRF05 temperature for distance calculations"}]
 

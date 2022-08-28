@@ -272,17 +272,19 @@ static void get_lux_handler(struct mg_rpc_request_info *ri,
 static void srf05_timer_cb(void *arg UNUSED_ARG) {
   int sid = mgos_sys_config_get_sensor_id();
   const char *hub_addr = mgos_sys_config_get_hub_address();
-  float dist = srf05_get_max();
+  const float dist_last = srf05_get_last();
+  const float dist_max = srf05_get_max();
+  const float dist_avg = srf05_get_avg();
   double now = mg_time();
-  LOG(LL_INFO, ("SID %d: max %.3f m (last %.3f m) RSSI %d", sid, dist,
-                srf05_get_last(), mgos_wifi_sta_get_rssi()));
-  if (dist <= 0) return;
+  LOG(LL_INFO, ("SID %d: last %.3fm avg %.3fm max %.3f m", sid, dist_last,
+                dist_avg, dist_max));
+  if (dist_avg <= 0) return;
   if (sid < 0 || hub_addr == NULL) return;
   struct mg_rpc_call_opts opts = {.dst = mg_mk_str(hub_addr)};
   const char *name = mgos_sys_config_get_sensor_name();
   mg_rpc_callf(mgos_rpc_get_global(), mg_mk_str("Sensor.Data"), NULL, NULL,
                &opts, "{sid: %d, subid: %d, st: %Q, name: %Q, ts: %f, v: %.3f}",
-               sid, 30, "SRF05", (name ?: ""), now, dist);
+               sid, 30, "SRF05", (name ?: ""), now, dist_avg);
 }
 
 static void init2(void *arg) {

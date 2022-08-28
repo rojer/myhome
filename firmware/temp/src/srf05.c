@@ -9,9 +9,9 @@
 
 #define INVALID_VALUE -1000.0
 
-#define NUM_READINGS 60
 static int s_idx = 0;
-static float s_readings[NUM_READINGS] = {0};
+static int s_num_samples = 0;
+static float *s_samples = NULL;
 static float s_last = 0.0;
 static int64_t s_start = 0, s_end = 0;
 
@@ -32,8 +32,8 @@ float srf05_get_last(void) {
 float srf05_get_avg(void) {
   int i = 0;
   float sum = 0;
-  while (i < NUM_READINGS) {
-    float v = s_readings[i];
+  while (i < s_num_samples) {
+    float v = s_samples[i];
     if (v <= 0) break;
     sum += v;
     i++;
@@ -43,9 +43,9 @@ float srf05_get_avg(void) {
 
 float srf05_get_max(void) {
   float max = 0;
-  for (int i = 0; i < NUM_READINGS; i++) {
-    if (s_readings[i] > max) {
-      max = s_readings[i];
+  for (int i = 0; i < s_num_samples; i++) {
+    if (s_samples[i] > max) {
+      max = s_samples[i];
     }
   }
   return max;
@@ -65,8 +65,8 @@ static void srf05_timer_cb(void *arg) {
   } else if (s_start > 0) {  // Sensor missing.
     s_last = 0.0;
   }
-  s_readings[s_idx++] = s_last;
-  s_idx %= NUM_READINGS;
+  s_samples[s_idx++] = s_last;
+  s_idx %= s_num_samples;
   LOG(LL_DEBUG,
       ("Etime %f s, t %.2f, sp %.2f, last %.3f m, max %.3f m, avg %.3f m",
        etime, temp, speed, srf05_get_last(), srf05_get_max(), srf05_get_avg()));
@@ -78,13 +78,16 @@ static void srf05_timer_cb(void *arg) {
 }
 
 bool srf05_init(int sid, int trig_pin, int echo_pin, int poll_interval_ms) {
-  if (trig_pin < 0 || echo_pin < 0) return false;
+  s_num_samples = mgos_sys_config_get_srf05_num_samples();
+  if (trig_pin < 0 || echo_pin < 0 || s_num_samples <= 0) return false;
   LOG(LL_INFO, ("SRF05, TRIG:%d ECHO:%d", trig_pin, echo_pin));
   mgos_gpio_setup_output(trig_pin, 0);
   mgos_gpio_setup_input(echo_pin, MGOS_GPIO_PULL_DOWN);
   mgos_gpio_set_int_handler_isr(echo_pin, MGOS_GPIO_INT_EDGE_ANY,
                                 srf05_echo_int_handler, NULL);
   mgos_gpio_enable_int(echo_pin);
+  s_samples = calloc(s_num_samples, sizeof(*s_samples));
+  if (s_samples == NULL) return false;
   mgos_set_timer(poll_interval_ms, MGOS_TIMER_REPEAT, srf05_timer_cb,
                  (void *) (intptr_t) trig_pin);
   return true;
