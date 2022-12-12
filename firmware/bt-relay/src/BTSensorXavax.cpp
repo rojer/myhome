@@ -56,9 +56,10 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
     return;
   }
   const AdvData *xd = (const AdvData *) xds.p;
-  LOG(LL_DEBUG, ("Xavax %s RSSI %d t 0x%02x tt 0x%02x batt %d state 0x%02x",
+  LOG(LL_DEBUG, ("Xavax %s RSSI %d t 0x%02x tt 0x%02x batt %3d state 0x%02x "
+                 "mode 0x%02x unk 0x%04x",
                  addr_.ToString().c_str(), rssi, xd->temp, xd->tgt_temp,
-                 xd->batt_pct, xd->state));
+                 xd->batt_pct, xd->state, xd->mode, xd->unknown));
   union ReportData changed;
   // Sometimes bogus values are reported for temperatures.
   // Current gets value of target, target gets some random value:
