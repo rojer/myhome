@@ -9,17 +9,23 @@
 
 #include "mgos_bt.h"
 #include "mgos_bt_gap.h"
+#include "mgos_ota.h"
 #include "mgos_rpc.h"
 
 #include "mgos_rpc.h"
-
-static bool s_scanning = false;
 
 std::map<mgos::BTAddr, std::unique_ptr<BTSensor>> s_sensors;
 
 static void StartScan() {
-  if (s_scanning) return;
+  if (mgos_bt_gap_scan_in_progress()) {
+    if (mgos_ota_is_in_progress()) {
+      LOG(LL_INFO, ("Stopping scan while update is in progress"));
+      mgos_bt_gap_scan_stop();
+    }
+    return;
+  }
   if (mgos_sys_config_get_scan_duration_ms() <= 0) return;
+  if (mgos_ota_is_in_progress()) return;
   LOG(LL_DEBUG, ("Starting scan ns %d hf %d", (int) s_sensors.size(),
                  (int) mgos_get_free_heap_size()));
   struct mgos_bt_gap_scan_opts opts = {
@@ -28,7 +34,7 @@ static void StartScan() {
       .interval_ms = 0,  // Default
       .window_ms = 0,    // Default
   };
-  s_scanning = mgos_bt_gap_scan(&opts);
+  mgos_bt_gap_scan(&opts);
 }
 
 static void GAPHandler(int ev, void *ev_data, void *userdata) {
@@ -68,7 +74,6 @@ static void GAPHandler(int ev, void *ev_data, void *userdata) {
     }
     case MGOS_BT_GAP_EVENT_SCAN_STOP: {
       LOG(LL_DEBUG, ("Scan finished"));
-      s_scanning = false;
       break;
     }
   }
