@@ -55,49 +55,74 @@ void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
     LOG(LL_ERROR, ("Incompatible Xavax data length, %d", (int) xds.len));
     return;
   }
-  const AdvData *xd = (const AdvData *) xds.p;
-  LOG(LL_DEBUG, ("Xavax %s RSSI %d t 0x%02x tt 0x%02x batt %3d state 0x%02x "
+  const AdvData &xd = *reinterpret_cast<const AdvData *>(xds.p);
+  LOG(LL_DEBUG, ("Xavax %s RSSI %d t 0x%02x tt 0x%02x batt %3d%% state 0x%02x "
                  "mode 0x%02x unk 0x%04x",
-                 addr_.ToString().c_str(), rssi, xd->temp, xd->tgt_temp,
-                 xd->batt_pct, xd->state, xd->mode, xd->unknown));
+                 addr_.ToString().c_str(), rssi, xd.temp, xd.tgt_temp,
+                 xd.batt_pct, xd.state, xd.mode, xd.unknown));
+
+  if (ShouldSuppress(xd)) return;
+
   union ReportData changed;
-  // Sometimes bogus values are reported for temperatures.
-  // Current gets value of target, target gets some random value:
-  //   T 22.0 TT  4.0 batt 68% state 0x00 chg 0xff data 2c08448100ffd20d
-  //   T  4.0 TT 20.5 batt 68% state 0x00 chg 0x3 data 0829448100ff06fc
-  // More often than not, the value is 16.
-  if (xd->temp == tgt_temp_ &&
-      ((abs(((int) xd->temp) - ((int) temp_)) >= 4) ||
-       (tgt_temp_ != (16 * 2) && xd->tgt_temp == (16 * 2)))) {
-    LOG(LL_INFO,
-        ("%s SID %d: Bogus temp report (%.2f %.2f | %s) -> (%.2f %.2f | %s)",
-         addr_.ToString().c_str(), sid_, ConvTemp(temp_), ConvTemp(tgt_temp_),
-         last_adv_data_.ToString().c_str(), ConvTemp(xd->temp),
-         ConvTemp(xd->tgt_temp), xd->ToString().c_str()));
-    // We remember the bogus value so we can detect (2).
-    bogus_tgt_temp_ = xd->tgt_temp;
-  } else {
-    bogus_tgt_temp_ = 0;
-  }
-  if (temp_ != xd->temp && bogus_tgt_temp_ == 0) {
-    temp_ = xd->temp;
+  if (temp_ != xd.temp) {
+    temp_ = xd.temp;
     changed.temp = true;
   }
-  if (tgt_temp_ != xd->tgt_temp && xd->tgt_temp != bogus_tgt_temp_) {
-    tgt_temp_ = xd->tgt_temp;
+  if (tgt_temp_ != xd.tgt_temp) {
+    tgt_temp_ = xd.tgt_temp;
     changed.tgt_temp = true;
   }
-  if (state_ != xd->state) {
-    state_ = xd->state;
+  if (state_ != xd.state) {
+    state_ = xd.state;
     changed.state = true;
   }
   // Battery percentage can be bogus sometimes.
-  if (batt_pct_ != xd->batt_pct && xd->batt_pct <= 100) {
-    batt_pct_ = xd->batt_pct;
+  if (batt_pct_ != xd.batt_pct && xd.batt_pct <= 100) {
+    batt_pct_ = xd.batt_pct;
     changed.batt_pct = true;
   }
-  last_adv_data_ = *xd;
+  last_adv_data_ = xd;
   UpdateCommon(rssi, changed.value);
+}
+
+bool BTSensorXavax::ShouldSuppress(const AdvData &xd) {
+  // Check for bogus readings.
+  // Sometimes device advertises bogus values: temp takes value of the target
+  // temp and target temp becomes 0x20 (16C). Usually is persists for a minute
+  // (until next adv data update). So if, target temp becomes 16 we wait for
+  // 2+ minutes (two full refresh cycles) before we really believe it.
+  bool suppress = false;
+  if (xd.tgt_temp == 0x20) {
+    const int64_t now = mgos_uptime_micros();
+    if (tt16_since_ == 0) tt16_since_ = now;
+    if (now - tt16_since_ < 125 * 1000000) {
+      LOG(LL_DEBUG,
+          ("%s SID %d: Bogus data quarantine (%s): data age %lld",
+           addr_.ToString().c_str(), sid_, "tgt_temp", now - tt16_since_));
+      suppress = true;
+    }
+    // Ok, tgt_temp has been at 16 long enough it's probably legit.
+  } else {
+    if (tt16_since_ > 0 &&
+        (mgos_uptime_micros() - tt16_since_ < 125 * 1000000)) {
+      LOG(LL_INFO,
+          ("%s SID %d: Suppressed bogus data", addr_.ToString().c_str(), sid_));
+    }
+    tt16_since_ = 0;
+  }
+  // If temp is also 16, it could be a glitch, we similarly need to wait
+  if (xd.temp == 0x20) {
+    const int64_t now = mgos_uptime_micros();
+    if (t16_since_ == 0) t16_since_ = now;
+    if (xd.tgt_temp == 0x20 && now - t16_since_ < 125 * 1000000) {
+      LOG(LL_DEBUG, ("%s SID %d: Bogus data quarantine (%s): data age %lld",
+                     addr_.ToString().c_str(), sid_, "temp", now - t16_since_));
+      suppress = true;
+    }
+  } else {
+    t16_since_ = 0;
+  }
+  return suppress;
 }
 
 void BTSensorXavax::Report(uint32_t whatv) {

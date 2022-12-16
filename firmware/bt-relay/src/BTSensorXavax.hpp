@@ -26,10 +26,13 @@ class BTSensorXavax : public BTSensor {
     std::string ToString() const;
   } __attribute__((packed));
 
+  bool ShouldSuppress(const AdvData &xd);
+
   uint8_t temp_ = 0;
   uint8_t tgt_temp_ = 0;
-  uint8_t bogus_tgt_temp_ = 0;
   uint8_t batt_pct_ = 0;
   uint8_t state_ = 0;
   AdvData last_adv_data_;
+  int64_t t16_since_ = 0;
+  int64_t tt16_since_ = 0;
 };
