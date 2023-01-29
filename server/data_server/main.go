@@ -180,6 +180,7 @@ func (mch *mgRPCConnHandler) Handle(ctx context.Context, jsc *mgrpc.Conn, req *m
 			Code:    mgrpc.CodeMethodNotFound,
 			Message: "Method not found",
 		}
+		glog.Errorf("Unknown method, frame: %s %s", req.Method, req.Params)
 	}
 	if req.ID.Num != 0 || req.ID.Str != "" {
 		switch {
