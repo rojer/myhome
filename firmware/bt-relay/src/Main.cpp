@@ -12,7 +12,7 @@
 #include "mgos_ota.h"
 #include "mgos_rpc.h"
 
-#include "mgos_rpc.h"
+#include "mgos_wifi.h"
 
 static std::map<mgos::BTAddr, std::unique_ptr<BTSensor>> s_sensors;
 static double s_scanning_since = 0;
@@ -173,9 +173,39 @@ static void CheckSensors() {
   }
 }
 
+#define LED_R 26
+#define LED_G 25
+#define LED_B 27
+
+static void CheckLEDs() {
+  if (s_reboot_immenent) {
+    mgos_gpio_write(LED_R, 0);
+    mgos_gpio_write(LED_B, 0);
+    mgos_gpio_write(LED_G, 0);
+    mgos_gpio_blink(LED_G, 0, 0);
+    return;
+  }
+  if (mgos_ota_is_in_progress()) {
+    mgos_gpio_write(LED_R, 1);
+  } else {
+    mgos_gpio_write(LED_R, 0);
+  }
+  if (mgos_wifi_get_status() != MGOS_WIFI_IP_ACQUIRED) {
+    mgos_gpio_write(LED_B, 1);
+  } else {
+    mgos_gpio_write(LED_B, 0);
+  }
+  if (s_scanning_since > 0) {
+    mgos_gpio_blink(LED_G, 20, 980);
+  } else {
+    mgos_gpio_blink(LED_G, 0, 0);
+  }
+}
+
 static void StatusTimerCB() {
   CheckScan();
   CheckSensors();
+  CheckLEDs();
 }
 
 static mgos::Timer s_statusTimer(StatusTimerCB);
@@ -188,6 +218,7 @@ static void CommonEventCB(int ev, void *ev_data UNUSED_ARG,
       s_reboot_immenent = true;
   }
   CheckScan();
+  CheckLEDs();
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
@@ -195,6 +226,9 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_event_add_handler(MGOS_EVENT_OTA_BEGIN, CommonEventCB, nullptr);
   mgos_event_add_handler(MGOS_EVENT_REBOOT, CommonEventCB, nullptr);
   mgos_event_add_handler(MGOS_EVENT_REBOOT_AFTER, CommonEventCB, nullptr);
+  mgos_gpio_setup_output(LED_R, 1);
+  mgos_gpio_setup_output(LED_G, 1);
+  mgos_gpio_setup_output(LED_B, 1);
   s_statusTimer.Reset(1000, MGOS_TIMER_REPEAT);
   return MGOS_APP_INIT_SUCCESS;
 }

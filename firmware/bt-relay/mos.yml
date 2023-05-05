@@ -42,7 +42,11 @@ config_schema:
   - ["max_packet_size", "i", 1000, {title: "Max size of individual data packet"}]
   - ["scan_duration_ms", "i", 5000, {title: "Single scan duration"}]
 
-build_vars:
-  MGOS_ROOT_FS_TYPE: LFS
+conds:
+  - when: build_vars.BOARD == "Airlift"
+    # LED_R = 26, G = 25, B = 27
+    apply:
+      cdefs:
+        LED_STATUS: 25
 
 manifest_version: 2017-06-29

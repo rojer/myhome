@@ -63,15 +63,15 @@ void BTSensorMiPVVX::Update(const struct mg_str &adv_data, int8_t rssi) {
                    ad->batt_mv, ad->ctr, changed.value));
     if (ad->temp != temp_) {
       temp_ = ad->temp;
-      changed.temp = true;
+      // changed.temp = true;
     }
     if (ad->rh_pct != rh_pct_) {
       rh_pct_ = ad->rh_pct;
-      changed.rh_pct = true;
+      // changed.rh_pct = true;
     }
     if (ad->batt_pct != batt_pct_) {
       batt_pct_ = ad->batt_pct;
-      changed.batt_pct = true;
+      // changed.batt_pct = true;
     }
     batt_mv_ = ad->batt_mv;
     ctr_ = ad->ctr;
