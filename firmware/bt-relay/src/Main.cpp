@@ -16,7 +16,8 @@
 
 static std::map<mgos::BTAddr, std::unique_ptr<BTSensor>> s_sensors;
 static double s_scanning_since = 0;
-static bool s_reboot_immenent = false;
+static bool s_reboot_imminent = false;
+static double s_last_scan_result = 0;
 
 static void CheckScan() {
   bool should_scan = true;
@@ -26,7 +27,7 @@ static void CheckScan() {
   if (mgos_ota_is_in_progress()) {
     should_scan = false;
   }
-  if (s_reboot_immenent) {
+  if (s_reboot_imminent) {
     should_scan = false;
   }
   if (!should_scan) {
@@ -64,6 +65,8 @@ static void GAPHandler(int ev, void *ev_data, void *userdata) {
       struct json_out out = JSON_OUT_BUF(buf, sizeof(buf));
       auto *r = (struct mgos_bt_gap_scan_result *) ev_data;
       struct mg_str name = mgos_bt_gap_parse_name(r->adv_data);
+
+      s_last_scan_result = mgos_uptime();
 
       json_printf(
           &out, "{mac: %Q, name: %.*Q, rssi: %d, adv: %H, rsp: %H}",
@@ -106,6 +109,11 @@ static void CheckSensors() {
   std::string packet;
   const size_t kMaxPackets = mgos_sys_config_get_max_packets();
   const size_t kMaxPacketSize = mgos_sys_config_get_max_packet_size();
+
+  if (s_last_scan_result > 0 && (now - s_last_scan_result) > 600) {
+    LOG(LL_ERROR, ("Seem to be stuck, rebooting"));
+    mgos_system_restart_after(1000);
+  }
 
   // Make sure we've had the time since starting (or resuming) scanning
   // to gather a few samples before reporting or removing stale sensors.
@@ -178,7 +186,7 @@ static void CheckSensors() {
 #define LED_B 27
 
 static void CheckLEDs() {
-  if (s_reboot_immenent) {
+  if (s_reboot_imminent) {
     mgos_gpio_write(LED_R, 0);
     mgos_gpio_write(LED_B, 0);
     mgos_gpio_write(LED_G, 0);
@@ -215,7 +223,7 @@ static void CommonEventCB(int ev, void *ev_data UNUSED_ARG,
   switch (ev) {
     case MGOS_EVENT_REBOOT:
     case MGOS_EVENT_REBOOT_AFTER:
-      s_reboot_immenent = true;
+      s_reboot_imminent = true;
   }
   CheckScan();
   CheckLEDs();
