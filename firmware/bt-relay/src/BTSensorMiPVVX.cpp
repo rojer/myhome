@@ -36,7 +36,10 @@ union ReportData {
 bool BTSensorMiPVVX::Taste(const mgos::BTAddr &addr,
                            const struct mg_str &adv_data) {
   const struct AdvDataMiPVVX *ad = (const struct AdvDataMiPVVX *) adv_data.p;
-  if (adv_data.len != sizeof(*ad)) return false;
+  if (adv_data.len == sizeof(*ad) + 3) {
+    // Newer firmware alsp includes flags.
+    ad = (const struct AdvDataMiPVVX *) (adv_data.p + 3);
+  }
   if (ad->uuid != 0x181a) return false;
   if (mgos::BTAddr(ad->addr, true /* reverse */) != addr) return false;
   return true;
@@ -57,6 +60,10 @@ void BTSensorMiPVVX::Update(const struct mg_str &adv_data, int8_t rssi) {
   if (!Taste(addr_, adv_data)) return;
   union ReportData changed;
   const struct AdvDataMiPVVX *ad = (const struct AdvDataMiPVVX *) adv_data.p;
+  if (adv_data.len == sizeof(*ad) + 3) {
+    // Newer firmware alsp includes flags.
+    ad = (const struct AdvDataMiPVVX *) (adv_data.p + 3);
+  }
   if (ad->ctr != ctr_) {
     LOG(LL_DEBUG, ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d",
                    addr_.ToString().c_str(), ad->temp, ad->rh_pct, ad->batt_pct,
