@@ -48,8 +48,8 @@ static void CheckScan() {
   struct mgos_bt_gap_scan_opts opts = {
       .duration_ms = 5000,
       .active = false,
-      .interval_ms = 0,  // Default
-      .window_ms = 0,    // Default
+      .interval_ms = 241,
+      .window_ms = 61,
   };
   if (mgos_bt_gap_scan(&opts)) {
     if (s_scanning_since == 0) {
