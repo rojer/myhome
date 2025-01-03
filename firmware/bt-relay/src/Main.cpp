@@ -6,6 +6,7 @@
 #include <string>
 
 #include "mgos.hpp"
+#include "shos_bt_gap_adv.hpp"
 
 #include "mgos_bt.h"
 #include "mgos_bt_gap.h"
@@ -76,22 +77,30 @@ static void GAPHandler(int ev, void *ev_data, void *userdata) {
 
       LOG(LL_DEBUG, ("%s", buf));
 
+      shos::bt::gap::AdvData ad;
+      if (!ad.Parse(r->adv_data).ok()) break;
+
       BTSensor *ss = nullptr;
       auto it = s_sensors.find(r->addr);
       if (it != s_sensors.end()) {
         ss = it->second.get();
       } else {
-        auto ns = CreateBTSensor(r->addr, r->adv_data);
+        auto ns = CreateBTSensor(r->addr, r->adv_data, ad);
         if (ns != nullptr) {
           ss = ns.get();
           LOG(LL_INFO, ("New sensor %s type %d (%s) sid %u RSSI %d",
                         ss->addr().ToString().c_str(), (int) ss->type(),
                         ss->type_str(), (unsigned) ss->sid(), r->rssi));
           s_sensors.emplace(ss->addr(), std::move(ns));
+        } else {
+          const mgos::BTAddr addr(r->addr);
+          LOG(LL_VERBOSE_DEBUG,
+              ("Unreconized data: %s %s", addr.ToString().c_str(),
+               shos::Str(r->adv_data).ToHexString().c_str()));
         }
       }
       if (ss != nullptr) {
-        ss->Update(r->adv_data, r->rssi);
+        ss->Update(r->adv_data, ad, r->rssi);
       }
       break;
     }
@@ -222,8 +231,7 @@ static void CommonEventCB(int ev, void *ev_data UNUSED_ARG,
                           void *userdata UNUSED_ARG) {
   switch (ev) {
     case MGOS_EVENT_REBOOT:
-    case MGOS_EVENT_REBOOT_AFTER:
-      s_reboot_imminent = true;
+    case MGOS_EVENT_REBOOT_AFTER: s_reboot_imminent = true;
   }
   CheckScan();
   CheckLEDs();

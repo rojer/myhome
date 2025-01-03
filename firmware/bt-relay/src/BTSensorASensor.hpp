@@ -9,7 +9,8 @@ class BTSensorASensor : public BTSensor {
 
   static bool Taste(const struct mg_str &adv_data);
 
-  void Update(const struct mg_str &adv_data, int8_t rssi) override;
+  void Update(const struct mg_str &adv_data, const shos::bt::gap::AdvData &ad,
+              int8_t rssi) override;
 
   void Report(uint32_t what) override;
 

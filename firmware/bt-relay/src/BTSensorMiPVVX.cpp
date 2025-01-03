@@ -4,11 +4,11 @@
 #include "mgos_bt.hpp"
 #include "mgos_bt_gap.h"
 
+static constexpr shos::bt::UUID kSvcUUID(
+    0x181A);  // 0x181A Environmental Sensing
+
 // https://github.com/pvvx/ATC_MiThermometer#custom-format-all-data-little-endian
-struct AdvDataMiPVVX {
-  uint8_t size;      // = 19
-  uint8_t uid;       // = 0x16, 16-bit UUID
-  uint16_t uuid;     // = 0x181A, GATT Service 0x181A Environmental Sensing
+struct SvcDataMiPVVX {
   uint8_t addr[6];   // [0] - lo, .. [6] - hi digits
   int16_t temp;      // x 0.01 degree
   uint16_t rh_pct;   // x 0.01 %
@@ -34,54 +34,47 @@ union ReportData {
 
 // static
 bool BTSensorMiPVVX::Taste(const mgos::BTAddr &addr,
-                           const struct mg_str &adv_data) {
-  const struct AdvDataMiPVVX *ad = (const struct AdvDataMiPVVX *) adv_data.p;
-  if (adv_data.len == sizeof(*ad) + 3) {
-    // Newer firmware alsp includes flags.
-    ad = (const struct AdvDataMiPVVX *) (adv_data.p + 3);
-  }
-  if (ad->uuid != 0x181a) return false;
-  if (mgos::BTAddr(ad->addr, true /* reverse */) != addr) return false;
-  return true;
+                           const shos::bt::gap::AdvData &ad) {
+  const auto svc_data = ad.GetServiceData(kSvcUUID);
+  if (svc_data.empty()) return false;
+  if (svc_data.len < sizeof(SvcDataMiPVVX)) return false;
+  const auto &sd = *reinterpret_cast<const SvcDataMiPVVX *>(svc_data.p);
+  return (mgos::BTAddr(sd.addr, true /* reverse */) == addr);
 }
 
 BTSensorMiPVVX::BTSensorMiPVVX(const mgos::BTAddr &addr)
-    : BTSensor(addr, Type::kMi) {
-}
+    : BTSensor(addr, Type::kMi) {}
 
-BTSensorMiPVVX::~BTSensorMiPVVX() {
-}
+BTSensorMiPVVX::~BTSensorMiPVVX() {}
 
 const char *BTSensorMiPVVX::type_str() const {
   return "MiPVVX";
 }
 
-void BTSensorMiPVVX::Update(const struct mg_str &adv_data, int8_t rssi) {
-  if (!Taste(addr_, adv_data)) return;
+void BTSensorMiPVVX::Update(const struct mg_str &adv_data,
+                            const shos::bt::gap::AdvData &ad, int8_t rssi) {
+  const auto svc_data = ad.GetServiceData(kSvcUUID);
+  if (svc_data.len < sizeof(SvcDataMiPVVX)) return;
+  const auto &sd = *reinterpret_cast<const SvcDataMiPVVX *>(svc_data.p);
   union ReportData changed;
-  const struct AdvDataMiPVVX *ad = (const struct AdvDataMiPVVX *) adv_data.p;
-  if (adv_data.len == sizeof(*ad) + 3) {
-    // Newer firmware alsp includes flags.
-    ad = (const struct AdvDataMiPVVX *) (adv_data.p + 3);
-  }
-  if (ad->ctr != ctr_) {
-    LOG(LL_DEBUG, ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d",
-                   addr_.ToString().c_str(), ad->temp, ad->rh_pct, ad->batt_pct,
-                   ad->batt_mv, ad->ctr, changed.value));
-    if (ad->temp != temp_) {
-      temp_ = ad->temp;
+  if (sd.ctr != ctr_) {
+    LOG(LL_DEBUG,
+        ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d", addr_.ToString().c_str(),
+         sd.temp, sd.rh_pct, sd.batt_pct, sd.batt_mv, sd.ctr, changed.value));
+    if (sd.temp != temp_) {
+      temp_ = sd.temp;
       // changed.temp = true;
     }
-    if (ad->rh_pct != rh_pct_) {
-      rh_pct_ = ad->rh_pct;
+    if (sd.rh_pct != rh_pct_) {
+      rh_pct_ = sd.rh_pct;
       // changed.rh_pct = true;
     }
-    if (ad->batt_pct != batt_pct_) {
-      batt_pct_ = ad->batt_pct;
+    if (sd.batt_pct != batt_pct_) {
+      batt_pct_ = sd.batt_pct;
       // changed.batt_pct = true;
     }
-    batt_mv_ = ad->batt_mv;
-    ctr_ = ad->ctr;
+    batt_mv_ = sd.batt_mv;
+    ctr_ = sd.ctr;
   }
   UpdateCommon(rssi, changed.value);
 }

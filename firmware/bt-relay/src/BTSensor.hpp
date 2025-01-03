@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "mgos_bt.hpp"
+#include "shos_bt_gap_adv.hpp"
 
 #pragma once
 
@@ -14,6 +15,7 @@ class BTSensor {
     kXavax = 1,
     kASensor = 2,
     kMi = 3,
+    kBTHome = 4,
   };
 
   struct Data {
@@ -39,7 +41,8 @@ class BTSensor {
 
   virtual const char *type_str() const = 0;
 
-  virtual void Update(const struct mg_str &adv_data, int8_t rssi) = 0;
+  virtual void Update(const struct mg_str &adv_data,
+                      const shos::bt::gap::AdvData &ad, int8_t rssi) = 0;
 
   static constexpr uint32_t kReportAll = 0xffffffff;
   virtual void Report(uint32_t what) = 0;
@@ -60,4 +63,5 @@ class BTSensor {
 };
 
 std::unique_ptr<BTSensor> CreateBTSensor(const mgos::BTAddr &addr,
-                                         const struct mg_str &adv_data);
+                                         const struct mg_str &adv_data,
+                                         const shos::bt::gap::AdvData &ad);

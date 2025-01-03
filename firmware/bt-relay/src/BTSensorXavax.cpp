@@ -7,7 +7,10 @@
 #include "mgos_bt.hpp"
 #include "mgos_bt_gap.h"
 
-static const mgos::BTUUID kXavaxSvcUUID("47e9ee00-47e9-11e4-8939-164230d1df67");
+// 47e9ee00-47e9-11e4-8939-164230d1df67
+static const shos::bt::UUID kSvcUUID({0x47, 0xe9, 0xee, 0x00, 0x47, 0xe9, 0x11,
+                                      0xe4, 0x89, 0x39, 0x16, 0x42, 0x30, 0xd1,
+                                      0xdf, 0x67});
 
 union ReportData {
   struct {
@@ -26,16 +29,14 @@ std::string BTSensorXavax::AdvData::ToString() const {
 }
 
 // static
-bool BTSensorXavax::Taste(const struct mg_str &adv_data) {
-  return mgos_bt_gap_adv_data_has_service(adv_data, &kXavaxSvcUUID);
+bool BTSensorXavax::Taste(const shos::bt::gap::AdvData &ad) {
+  return ad.HasService(kSvcUUID);
 }
 
 BTSensorXavax::BTSensorXavax(const mgos::BTAddr &addr)
-    : BTSensor(addr, Type::kXavax) {
-}
+    : BTSensor(addr, Type::kXavax) {}
 
-BTSensorXavax::~BTSensorXavax() {
-}
+BTSensorXavax::~BTSensorXavax() {}
 
 const char *BTSensorXavax::type_str() const {
   return "Xavax";
@@ -46,10 +47,15 @@ static float ConvTemp(uint8_t t) {
   return (t * 0.5);
 }
 
-void BTSensorXavax::Update(const struct mg_str &adv_data, int8_t rssi) {
-  if (!Taste(adv_data)) return;
-  struct mg_str xds = mgos_bt_gap_parse_adv_data(
-      adv_data, MGOS_BT_GAP_EIR_MANUFACTURER_SPECIFIC_DATA);
+void BTSensorXavax::Update(const struct mg_str &adv_data,
+                           const shos::bt::gap::AdvData &ad, int8_t rssi) {
+  shos::Str xds;
+  for (const auto &e : ad) {
+    if (e.type() == shos::bt::gap::AdvDataType::kVendorSpecific) {
+      xds = e.data();
+      break;
+    }
+  }
   if (xds.len != sizeof(AdvData)) {
     if (xds.len == 0) return;
     LOG(LL_ERROR, ("Incompatible Xavax data length, %d", (int) xds.len));

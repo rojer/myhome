@@ -28,17 +28,16 @@ bool BTSensorASensor::Taste(const struct mg_str &adv_data) {
 }
 
 BTSensorASensor::BTSensorASensor(const mgos::BTAddr &addr)
-    : BTSensor(addr, Type::kASensor) {
-}
+    : BTSensor(addr, Type::kASensor) {}
 
-BTSensorASensor::~BTSensorASensor() {
-}
+BTSensorASensor::~BTSensorASensor() {}
 
 const char *BTSensorASensor::type_str() const {
   return "ASensor";
 }
 
-void BTSensorASensor::Update(const struct mg_str &adv_data, int8_t rssi) {
+void BTSensorASensor::Update(const struct mg_str &adv_data,
+                             const shos::bt::gap::AdvData &ad2, int8_t rssi) {
   if (!Taste(adv_data)) return;
   uint32_t changed = 0;
   const struct AdvDataASensor *ad = (const struct AdvDataASensor *) adv_data.p;

@@ -34,17 +34,16 @@ bool BTSensorMiATS::Taste(const mgos::BTAddr &addr,
 }
 
 BTSensorMiATS::BTSensorMiATS(const mgos::BTAddr &addr)
-    : BTSensor(addr, Type::kMi) {
-}
+    : BTSensor(addr, Type::kMi) {}
 
-BTSensorMiATS::~BTSensorMiATS() {
-}
+BTSensorMiATS::~BTSensorMiATS() {}
 
 const char *BTSensorMiATS::type_str() const {
   return "MiATS";
 }
 
-void BTSensorMiATS::Update(const struct mg_str &adv_data, int8_t rssi) {
+void BTSensorMiATS::Update(const struct mg_str &adv_data,
+                           const shos::bt::gap::AdvData &ad2, int8_t rssi) {
   if (!Taste(addr_, adv_data)) return;
   union ReportData changed;
   const struct AdvDataMiATS *ad = (const struct AdvDataMiATS *) adv_data.p;

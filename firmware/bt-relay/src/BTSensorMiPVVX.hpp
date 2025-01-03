@@ -5,11 +5,12 @@ class BTSensorMiPVVX : public BTSensor {
   BTSensorMiPVVX(const mgos::BTAddr &addr);
   virtual ~BTSensorMiPVVX();
 
-  static bool Taste(const mgos::BTAddr &addr, const struct mg_str &adv_data);
+  static bool Taste(const mgos::BTAddr &addr, const shos::bt::gap::AdvData &ad);
 
   const char *type_str() const override;
 
-  void Update(const struct mg_str &adv_data, int8_t rssi) override;
+  void Update(const struct mg_str &adv_data, const shos::bt::gap::AdvData &ad,
+              int8_t rssi) override;
 
   void Report(uint32_t what) override;
 

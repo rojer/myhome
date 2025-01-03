@@ -5,11 +5,12 @@ class BTSensorXavax : public BTSensor {
   BTSensorXavax(const mgos::BTAddr &addr);
   virtual ~BTSensorXavax();
 
-  static bool Taste(const struct mg_str &adv_data);
+  static bool Taste(const shos::bt::gap::AdvData &ad);
 
   const char *type_str() const override;
 
-  void Update(const struct mg_str &adv_data, int8_t rssi) override;
+  void Update(const struct mg_str &adv_data, const shos::bt::gap::AdvData &ad,
+              int8_t rssi) override;
 
   void Report(uint32_t what) override;
 
