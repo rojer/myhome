@@ -1,6 +1,6 @@
 name: hub
 platform: esp32
-version: 2.12.0
+version: 2.13.0
 
 libs_version: latest
 modules_version: latest

@@ -138,9 +138,20 @@ void Control::Eval(bool force) {
     if (now - last_eval_ < cfg_->eval_interval && !force) return;
     for (Limit *l : limits_) {
       struct SensorData sd;
-      uint8_t sensor_type = (l->sid() >> 24);
+      const uint8_t sensor_type = (l->sid() >> 24);
       // For Xavax sensors, update thresholds from target temperature.
       if (sensor_type == 1 && hub_get_data(l->sid(), 1, &sd)) {
+        double want_min = sd.value - 0.5, want_max = sd.value + 0.5;
+        if (l->min() != want_min || l->max() != want_max) {
+          LOG(LL_INFO, ("%d: SID %d: Updating thresholds to match TT %.1f",
+                        l->id(), l->sid(), sd.value));
+          l->set_min(want_min);
+          l->set_max(want_max);
+          mgos_sys_config_save(&mgos_sys_config, false /* try_once */, nullptr);
+        }
+      }
+      // Same for BluTRV
+      if (sensor_type == 4 && hub_get_data(l->sid(), 0x4500, &sd)) {
         double want_min = sd.value - 0.5, want_max = sd.value + 0.5;
         if (l->min() != want_min || l->max() != want_max) {
           LOG(LL_INFO, ("%d: SID %d: Updating thresholds to match TT %.1f",
