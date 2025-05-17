@@ -3,9 +3,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "mgos.hpp"
-#include "mgos_bt.hpp"
-#include "mgos_bt_gap.h"
+#include "shos.hpp"
+#include "shos_bt.hpp"
+#include "shos_bt_gap.h"
 
 struct AdvDataASensor {
   uint8_t hdr[9];   // 02 01 06 03 03 f5 fe 13 ff
@@ -22,12 +22,12 @@ struct AdvDataASensor {
 } __attribute__((packed));
 
 // static
-bool BTSensorASensor::Taste(const struct mg_str &adv_data) {
+bool BTSensorASensor::Taste(shos::Str adv_data) {
   const struct AdvDataASensor *ad = (const struct AdvDataASensor *) adv_data.p;
   return (adv_data.len == sizeof(*ad) && ad->vendor == 0x00d2);
 }
 
-BTSensorASensor::BTSensorASensor(const mgos::BTAddr &addr)
+BTSensorASensor::BTSensorASensor(const shos::bt::Addr &addr)
     : BTSensor(addr, Type::kASensor) {}
 
 BTSensorASensor::~BTSensorASensor() {}
@@ -36,7 +36,7 @@ const char *BTSensorASensor::type_str() const {
   return "ASensor";
 }
 
-void BTSensorASensor::Update(const struct mg_str &adv_data,
+void BTSensorASensor::Update(shos::Str adv_data,
                              const shos::bt::gap::AdvData &ad2, int8_t rssi) {
   if (!Taste(adv_data)) return;
   uint32_t changed = 0;
@@ -59,6 +59,6 @@ void BTSensorASensor::Report(uint32_t what) {
   if (what == kReportAll) {
     ReportData(0, temp_);
     ReportData(2, batt_pct_);
-    last_reported_uts_ = mgos_uptime();
+    last_reported_uts_ = shos_uptime();
   }
 }

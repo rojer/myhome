@@ -1,11 +1,10 @@
 #include "BTSensorMiPVVX.hpp"
 
-#include "mgos.hpp"
-#include "mgos_bt.hpp"
-#include "mgos_bt_gap.h"
+#include "shos.hpp"
+#include "shos_bt.hpp"
+#include "shos_bt_gap.h"
 
-static constexpr shos::bt::UUID kSvcUUID(
-    0x181A);  // 0x181A Environmental Sensing
+static constexpr shos::bt::UUID kSvcUUID(0x181A);  // Environmental Sensing
 
 // https://github.com/pvvx/ATC_MiThermometer#custom-format-all-data-little-endian
 struct SvcDataMiPVVX {
@@ -33,16 +32,16 @@ union ReportData {
 };
 
 // static
-bool BTSensorMiPVVX::Taste(const mgos::BTAddr &addr,
+bool BTSensorMiPVVX::Taste(const shos::bt::Addr &addr,
                            const shos::bt::gap::AdvData &ad) {
   const auto svc_data = ad.GetServiceData(kSvcUUID);
   if (svc_data.empty()) return false;
   if (svc_data.len < sizeof(SvcDataMiPVVX)) return false;
   const auto &sd = *reinterpret_cast<const SvcDataMiPVVX *>(svc_data.p);
-  return (mgos::BTAddr(sd.addr, true /* reverse */) == addr);
+  return (shos::bt::Addr(sd.addr, true /* reverse */) == addr);
 }
 
-BTSensorMiPVVX::BTSensorMiPVVX(const mgos::BTAddr &addr)
+BTSensorMiPVVX::BTSensorMiPVVX(const shos::bt::Addr &addr)
     : BTSensor(addr, Type::kMi) {}
 
 BTSensorMiPVVX::~BTSensorMiPVVX() {}
@@ -51,16 +50,16 @@ const char *BTSensorMiPVVX::type_str() const {
   return "MiPVVX";
 }
 
-void BTSensorMiPVVX::Update(const struct mg_str &adv_data,
+void BTSensorMiPVVX::Update(shos::Str adv_data,
                             const shos::bt::gap::AdvData &ad, int8_t rssi) {
   const auto svc_data = ad.GetServiceData(kSvcUUID);
   if (svc_data.len < sizeof(SvcDataMiPVVX)) return;
   const auto &sd = *reinterpret_cast<const SvcDataMiPVVX *>(svc_data.p);
   union ReportData changed;
   if (sd.ctr != ctr_) {
-    LOG(LL_DEBUG,
-        ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d", addr_.ToString().c_str(),
-         sd.temp, sd.rh_pct, sd.batt_pct, sd.batt_mv, sd.ctr, changed.value));
+    LOG(LL_DEBUG, ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d",
+                   addr_.ToString().c_str(), sd.temp, sd.rh_pct, sd.batt_pct,
+                   sd.batt_mv, sd.ctr, int(changed.value)));
     if (sd.temp != temp_) {
       temp_ = sd.temp;
       // changed.temp = true;
@@ -92,6 +91,6 @@ void BTSensorMiPVVX::Report(uint32_t whatv) {
     ReportData(2, batt_pct_);
   }
   if (whatv == kReportAll) {
-    last_reported_uts_ = mgos_uptime();
+    last_reported_uts_ = shos_uptime();
   }
 }

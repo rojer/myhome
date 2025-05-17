@@ -1,6 +1,6 @@
 #include "BTSensor.hpp"
 
-#include "mgos.hpp"
+#include "shos.hpp"
 
 #include "BTSensorASensor.hpp"
 #include "BTSensorBTHome.hpp"
@@ -8,7 +8,7 @@
 #include "BTSensorMiPVVX.hpp"
 #include "BTSensorXavax.hpp"
 
-BTSensor::BTSensor(const mgos::BTAddr &addr, Type type)
+BTSensor::BTSensor(const shos::bt::Addr &addr, Type type)
     : addr_(addr),
       type_(type),
       sid_((((uint32_t) type) << 24) | (addr.addr[3] << 16) |
@@ -16,7 +16,7 @@ BTSensor::BTSensor(const mgos::BTAddr &addr, Type type)
 
 BTSensor::~BTSensor() {}
 
-const mgos::BTAddr &BTSensor::addr() const {
+const shos::bt::Addr &BTSensor::addr() const {
   return addr_;
 }
 
@@ -44,15 +44,15 @@ BTSensor::Data::Data(uint32_t sid, uint32_t subid, double ts, double value)
     : sid(sid), subid(subid), ts(ts), value(value) {}
 
 std::string BTSensor::Data::ToJSON() const {
-  return mgos::JSONPrintStringf("{sid: %u, subid: %u, ts: %.3f, v: %.1f}",
-                                (unsigned) sid, (unsigned) subid, ts, value);
+  return shos::json::SPrintf("{sid: %u, subid: %u, ts: %.3f, v: %.1f}",
+                             (unsigned) sid, (unsigned) subid, ts, value);
 }
 
 void BTSensor::UpdateCommon(int8_t rssi, uint32_t changed) {
   rssi_ = rssi;
-  last_seen_ts_ = mg_time();
-  last_seen_uts_ = mgos_uptime();
-  if (changed != 0 && mgos_sys_config_get_report_on_change()) {
+  last_seen_ts_ = shos_time();
+  last_seen_uts_ = shos_uptime();
+  if (changed != 0 && shos_sys_config_get_report_on_change()) {
     Report(changed);
   }
 }
@@ -61,8 +61,8 @@ void BTSensor::ReportData(uint32_t subid, double value) {
   data_.push_back(Data(sid_, subid, last_seen_ts_, value));
 }
 
-std::unique_ptr<BTSensor> CreateBTSensor(const mgos::BTAddr &addr,
-                                         const struct mg_str &adv_data,
+std::unique_ptr<BTSensor> CreateBTSensor(const shos::bt::Addr &addr,
+                                         shos::Str adv_data,
                                          const shos::bt::gap::AdvData &ad) {
   std::unique_ptr<BTSensor> res;
   if (BTSensorASensor::Taste(adv_data)) {
@@ -76,5 +76,5 @@ std::unique_ptr<BTSensor> CreateBTSensor(const mgos::BTAddr &addr,
   } else if (BTSensorXavax::Taste(ad)) {
     res.reset(new BTSensorXavax(addr));
   }
-  return std::move(res);
+  return res;
 }

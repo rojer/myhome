@@ -2,14 +2,14 @@
 
 class BTSensorMiATS : public BTSensor {
  public:
-  BTSensorMiATS(const mgos::BTAddr &addr);
+  BTSensorMiATS(const shos::bt::Addr &addr);
   virtual ~BTSensorMiATS();
 
-  static bool Taste(const mgos::BTAddr &addr, const struct mg_str &adv_data);
+  static bool Taste(const shos::bt::Addr &addr, shos::Str adv_data);
 
   const char *type_str() const override;
 
-  void Update(const struct mg_str &adv_data, const shos::bt::gap::AdvData &ad,
+  void Update(shos::Str adv_data, const shos::bt::gap::AdvData &ad,
               int8_t rssi) override;
 
   void Report(uint32_t what) override;

@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "mgos_bt.hpp"
+#include "shos_bt.hpp"
 #include "shos_bt_gap_adv.hpp"
 
 #pragma once
@@ -28,11 +28,11 @@ class BTSensor {
     std::string ToJSON() const;
   };
 
-  BTSensor(const mgos::BTAddr &addr, Type type);
+  BTSensor(const shos::bt::Addr &addr, Type type);
   virtual ~BTSensor();
   BTSensor(const BTSensor &other) = delete;
 
-  const mgos::BTAddr &addr() const;
+  const shos::bt::Addr &addr() const;
   Type type() const;
   uint32_t sid() const;
   double last_seen_uts() const;
@@ -41,8 +41,8 @@ class BTSensor {
 
   virtual const char *type_str() const = 0;
 
-  virtual void Update(const struct mg_str &adv_data,
-                      const shos::bt::gap::AdvData &ad, int8_t rssi) = 0;
+  virtual void Update(shos::Str adv_data, const shos::bt::gap::AdvData &ad,
+                      int8_t rssi) = 0;
 
   static constexpr uint32_t kReportAll = 0xffffffff;
   virtual void Report(uint32_t what) = 0;
@@ -51,9 +51,9 @@ class BTSensor {
   void UpdateCommon(int8_t rssi, uint32_t changed);
   void ReportData(uint32_t subid, double value);
 
-  const mgos::BTAddr addr_;
+  const shos::bt::Addr addr_;
   const Type type_;
-  const uint32_t sid_;
+  const int sid_;
   int8_t rssi_ = 0;
   double last_seen_ts_ = 0;
   double last_seen_uts_ = 0;
@@ -62,6 +62,6 @@ class BTSensor {
   std::vector<Data> data_;
 };
 
-std::unique_ptr<BTSensor> CreateBTSensor(const mgos::BTAddr &addr,
-                                         const struct mg_str &adv_data,
+std::unique_ptr<BTSensor> CreateBTSensor(const shos::bt::Addr &addr,
+                                         shos::Str adv_data,
                                          const shos::bt::gap::AdvData &ad);

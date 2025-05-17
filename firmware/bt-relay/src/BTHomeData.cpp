@@ -3,8 +3,8 @@
 #include <cmath>
 #include <cstring>
 
-// #include "shelly_bthome_device.hpp"
-// #include "shelly_utils.hpp"
+#include "shos_json_utils.hpp"
+#include "shos_utils.hpp"
 
 #include "mbedtls/ccm.h"
 
@@ -214,8 +214,8 @@ std::string BTHomeObject::DataTypeString(uint8_t id, DataType type) {
 }
 
 std::string BTHomeObject::GetInfoJson() const {
-  return mgos::JSONPrintStringf("{obj_id:%u,obj_name:%Q,type:%Q,unit:%Q}", id,
-                                name, DataTypeString(id, type).c_str(), unit);
+  return shos::json::SPrintf("{obj_id:%u,obj_name:%Q,type:%Q,unit:%Q}", id,
+                             name, DataTypeString(id, type).c_str(), unit);
 }
 
 StatusOr<BTHomeValue> BTHomeValue::ParseAndConsume(Str &data) {
@@ -240,7 +240,8 @@ StatusOr<BTHomeValue> BTHomeValue::ParseAndConsume(Str &data) {
                   obj_id, obj_len, data.size());
   }
   if (obj.format == DataFormat::kStr) {
-    const uint8_t to_copy = min(uint8_t(data[1]), uint8_t(sizeof(str_val.val)));
+    const uint8_t to_copy =
+        std::min(uint8_t(data[1]), uint8_t(sizeof(str_val.val)));
     BTHomeValue res{
         .obj_id = obj_id,
         .index = 0,
@@ -314,13 +315,6 @@ StatusOr<BTHomeValue> BTHomeValue::ParseAndConsume(Str &data) {
   }
 }
 
-BTHomeData::BTHomeData(const BTHomeData &other) {
-  address = other.address;
-  info = other.info;
-  bthome_data = shos_strdup(other.bthome_data);
-  values = other.values;
-}
-
 Status BTHomeData::Parse(const shos::bt::Addr &addr,
                          const shos::bt::gap::AdvData &ad, Str key) {
   const Str bthome_service_data = ad.GetServiceData(kBTHomeServiceUUID);
@@ -346,7 +340,7 @@ Status BTHomeData::Parse(const shos::bt::Addr &addr, Str data, Str key) {
     return Errorf(static_cast<int>(ParseErrors::kUnencrypted),
                   "Unencrypted data for encrypted BTHome device");
   } else {
-    bthome_data = shos_strdup(data.substr(1));
+    bthome_data = data.substr(1).ToString();
   }
 
   return ParseData();
@@ -429,7 +423,7 @@ StatusOr<BTHomeValue> BTHomeData::GetValue(uint8_t obj_id,
 std::string BTHomeData::ToString() const {
   auto out = shos::SPrintf(
       "BTHomeData(%s): v %d enc %d '%s' [", address.ToString(false).c_str(),
-      info.version, info.encrypted, bthome_data.ToHexString(true).c_str());
+      info.version, info.encrypted, Str(bthome_data).ToHexString(true).c_str());
   bool first = true;
   for (const auto &val : values) {
     if (!first) out += " ";

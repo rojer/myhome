@@ -5,3 +5,4 @@ DerivePointerBinding: false
 IncludeBlocks: Preserve
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
+QualifierAlignment: Left

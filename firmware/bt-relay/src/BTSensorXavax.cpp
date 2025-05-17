@@ -3,9 +3,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "mgos.hpp"
-#include "mgos_bt.hpp"
-#include "mgos_bt_gap.h"
+#include "shos.hpp"
+#include "shos_bt.hpp"
+#include "shos_bt_gap.h"
 
 // 47e9ee00-47e9-11e4-8939-164230d1df67
 static const shos::bt::UUID kSvcUUID({0x47, 0xe9, 0xee, 0x00, 0x47, 0xe9, 0x11,
@@ -23,7 +23,7 @@ union ReportData {
 };
 
 std::string BTSensorXavax::AdvData::ToString() const {
-  return mgos::SPrintf(
+  return shos::SPrintf(
       "{T=%u TT=%u B=%u M=0x%02x S=0x%02x UFF=0x%02x U=0x%04x}", temp, tgt_temp,
       batt_pct, mode, state, unknown_ff, unknown);
 }
@@ -33,7 +33,7 @@ bool BTSensorXavax::Taste(const shos::bt::gap::AdvData &ad) {
   return ad.HasService(kSvcUUID);
 }
 
-BTSensorXavax::BTSensorXavax(const mgos::BTAddr &addr)
+BTSensorXavax::BTSensorXavax(const shos::bt::Addr &addr)
     : BTSensor(addr, Type::kXavax) {}
 
 BTSensorXavax::~BTSensorXavax() {}
@@ -47,8 +47,8 @@ static float ConvTemp(uint8_t t) {
   return (t * 0.5);
 }
 
-void BTSensorXavax::Update(const struct mg_str &adv_data,
-                           const shos::bt::gap::AdvData &ad, int8_t rssi) {
+void BTSensorXavax::Update(shos::Str adv_data, const shos::bt::gap::AdvData &ad,
+                           int8_t rssi) {
   shos::Str xds;
   for (const auto &e : ad) {
     if (e.type() == shos::bt::gap::AdvDataType::kVendorSpecific) {
@@ -99,7 +99,7 @@ bool BTSensorXavax::ShouldSuppress(const AdvData &xd) {
   // 2+ minutes (two full refresh cycles) before we really believe it.
   bool suppress = false;
   if (xd.tgt_temp == 0x20) {
-    const int64_t now = mgos_uptime_micros();
+    const int64_t now = shos_uptime_micros();
     if (tt16_since_ == 0) tt16_since_ = now;
     if (now - tt16_since_ < 125 * 1000000) {
       LOG(LL_DEBUG,
@@ -110,7 +110,7 @@ bool BTSensorXavax::ShouldSuppress(const AdvData &xd) {
     // Ok, tgt_temp has been at 16 long enough it's probably legit.
   } else {
     if (tt16_since_ > 0 &&
-        (mgos_uptime_micros() - tt16_since_ < 125 * 1000000)) {
+        (shos_uptime_micros() - tt16_since_ < 125 * 1000000)) {
       LOG(LL_INFO,
           ("%s SID %d: Suppressed bogus data", addr_.ToString().c_str(), sid_));
     }
@@ -118,7 +118,7 @@ bool BTSensorXavax::ShouldSuppress(const AdvData &xd) {
   }
   // If temp is also 16, it could be a glitch, we similarly need to wait
   if (xd.temp == 0x20) {
-    const int64_t now = mgos_uptime_micros();
+    const int64_t now = shos_uptime_micros();
     if (t16_since_ == 0) t16_since_ = now;
     if (xd.tgt_temp == 0x20 && now - t16_since_ < 125 * 1000000) {
       LOG(LL_DEBUG, ("%s SID %d: Bogus data quarantine (%s): data age %lld",
@@ -150,6 +150,6 @@ void BTSensorXavax::Report(uint32_t whatv) {
     ReportData(4, state_);
   }
   if (whatv == kReportAll) {
-    last_reported_uts_ = mgos_uptime();
+    last_reported_uts_ = shos_uptime();
   }
 }

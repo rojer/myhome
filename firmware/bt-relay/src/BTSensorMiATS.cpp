@@ -1,8 +1,8 @@
 #include "BTSensorMiATS.hpp"
 
-#include "mgos.hpp"
-#include "mgos_bt.hpp"
-#include "mgos_bt_gap.h"
+#include "shos.hpp"
+#include "shos_bt.hpp"
+#include "shos_bt_gap.h"
 
 // https://github.com/atc1441/ATC_MiThermometer/#advertising-format-of-the-custom-firmware
 struct AdvDataMiATS {
@@ -25,15 +25,14 @@ union ReportData {
 };
 
 // static
-bool BTSensorMiATS::Taste(const mgos::BTAddr &addr,
-                          const struct mg_str &adv_data) {
+bool BTSensorMiATS::Taste(const shos::bt::Addr &addr, shos::Str adv_data) {
   const struct AdvDataMiATS *ad = (const struct AdvDataMiATS *) adv_data.p;
   if (adv_data.len != sizeof(*ad)) return false;
-  if (mgos::BTAddr(ad->addr, false /* reverse */) != addr) return false;
+  if (shos::bt::Addr(ad->addr, false /* reverse */) != addr) return false;
   return true;
 }
 
-BTSensorMiATS::BTSensorMiATS(const mgos::BTAddr &addr)
+BTSensorMiATS::BTSensorMiATS(const shos::bt::Addr &addr)
     : BTSensor(addr, Type::kMi) {}
 
 BTSensorMiATS::~BTSensorMiATS() {}
@@ -42,7 +41,7 @@ const char *BTSensorMiATS::type_str() const {
   return "MiATS";
 }
 
-void BTSensorMiATS::Update(const struct mg_str &adv_data,
+void BTSensorMiATS::Update(shos::Str adv_data,
                            const shos::bt::gap::AdvData &ad2, int8_t rssi) {
   if (!Taste(addr_, adv_data)) return;
   union ReportData changed;
@@ -51,7 +50,7 @@ void BTSensorMiATS::Update(const struct mg_str &adv_data,
     LOG(LL_DEBUG,
         ("%s T %d RH %d%% BATT %d%% / %dmV CNT %d %d", addr_.ToString().c_str(),
          (int16_t) ntohs(ad->temp), ad->rh_pct, ad->batt_pct,
-         ntohs(ad->batt_mv), ad->pkt_cnt, changed.value));
+         ntohs(ad->batt_mv), ad->pkt_cnt, int(changed.value)));
     if (ad->temp != temp_) {
       temp_ = ad->temp;
       changed.temp = true;
@@ -83,6 +82,6 @@ void BTSensorMiATS::Report(uint32_t whatv) {
     ReportData(2, batt_pct_);
   }
   if (whatv == kReportAll) {
-    last_reported_uts_ = mgos_uptime();
+    last_reported_uts_ = shos_uptime();
   }
 }

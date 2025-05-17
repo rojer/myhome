@@ -12,7 +12,7 @@
 
 namespace bthome {
 
-using mgos::Errorf;
+using shos::Errorf;
 using shos::Status;
 using shos::StatusOr;
 using shos::Str;
@@ -152,12 +152,10 @@ struct BTHomeData {
   };
 
   BTHomeData() = default;
-  BTHomeData(const BTHomeData &other);
-  ~BTHomeData() { mg_strfree(&bthome_data); }
 
   shos::bt::Addr address;
   DeviceInfo info;
-  Str bthome_data;
+  std::string bthome_data;
   std::vector<BTHomeValue> values;
 
   StatusOr<BTHomeValue> GetValue(uint8_t obj_id, uint8_t index) const;

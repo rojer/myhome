@@ -1,8 +1,8 @@
 #include "BTSensorBTHome.hpp"
 
-#include "mgos.hpp"
-#include "mgos_bt.hpp"
-#include "mgos_bt_gap.h"
+#include "shos.hpp"
+#include "shos_bt.hpp"
+#include "shos_bt_gap.h"
 
 // static
 bool BTSensorBTHome::Taste(const shos::bt::gap::AdvData &ad) {
@@ -10,7 +10,7 @@ bool BTSensorBTHome::Taste(const shos::bt::gap::AdvData &ad) {
   return bthd.Parse(shos::bt::Addr(), ad).ok();
 }
 
-BTSensorBTHome::BTSensorBTHome(const mgos::BTAddr &addr)
+BTSensorBTHome::BTSensorBTHome(const shos::bt::Addr &addr)
     : BTSensor(addr, Type::kBTHome) {}
 
 BTSensorBTHome::~BTSensorBTHome() {}
@@ -19,7 +19,7 @@ const char *BTSensorBTHome::type_str() const {
   return "BTHome";
 }
 
-void BTSensorBTHome::Update(const struct mg_str &adv_data,
+void BTSensorBTHome::Update(shos::Str adv_data,
                             const shos::bt::gap::AdvData &ad, int8_t rssi) {
   bthome::BTHomeData bthd;
   if (!bthd.Parse(addr_, ad).ok()) return;
@@ -51,6 +51,6 @@ void BTSensorBTHome::Report(uint32_t whatv) {
     ReportData(subid, v.float_val);
   }
   if (whatv == kReportAll) {
-    last_reported_uts_ = mgos_uptime();
+    last_reported_uts_ = shos_uptime();
   }
 }

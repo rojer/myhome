@@ -1,0 +1,61 @@
+author: rojer
+#platform: esp32
+description: BT -> RPC relay
+version: 2.0.0
+
+libs_version: main
+modules_version: main
+os_version: main
+
+sources: [ src ]
+filesystem: [ fs ]
+
+libs:
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/bt-common.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/dns-sd.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/ota-source-http-client.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-common.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-http-ws.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-service-config.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-service-fs.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-service-gattc.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-service-ota.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-uart.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/rpc-udp.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/sntp.git
+  - origin: https://gitlab.allterco.net/Shelly/fw/libs/wifi.git
+
+config_schema:
+  - ["bt.enable", true]
+  - ["bt.adv_enable", false]
+  - ["bt.keep_enabled", true]
+  - ["dns_sd.enable", true]
+  - ["dns_sd.host_name", ""]
+  - ["wifi.ap.enable", false]
+  - ["ttl", "i", 300, {title: "If not seen for this long, remove"}]
+  - ["report_on_change", "b", true, {title: "Report if data changes"}]
+  - ["report_interval", "i", 60, {title: "Report at this interval"}]
+  - ["hub_address", "s", "", {title: "Relay to this address"}]
+  - ["max_packets", "i", 1, {title: "Max number of data packets to send at once"}]
+  - ["max_packet_size", "i", 1000, {title: "Max size of individual data packet"}]
+
+  # Send debug and RPC to USB (UART2).
+  - ["debug.stdout_uart", 2]
+  - ["debug.stderr_uart", 2]
+  - ["rpc.uart.uart_no", 2]
+  - ["rpc.uart.fc_type", 1]
+
+build_vars:
+  SHOS_DEBUG_UART: 2  # Early debug, before config is read.
+
+cdefs:
+  SHOS_ENABLE_RPC_CHANNEL_WEBSOCKET_OUT: 1
+
+conds:
+  - when: build_vars.BOARD == "Airlift"
+    # LED_R = 26, G = 25, B = 27
+    apply:
+      cdefs:
+        LED_STATUS: 25
+
+manifest_version: 2025-05-05
