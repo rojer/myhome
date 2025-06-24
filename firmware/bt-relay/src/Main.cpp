@@ -105,7 +105,7 @@ static void CheckScan() {
       ("Starting scan ns %zu hf %zu", s_sensors.size(), shos_heap_get_free()));
   shos::bt::gap::ScanOpts opts;
   opts.duration_ms = -1;  // forever
-  opts.dedup_horizon_ms = 3000;
+  opts.dedup = true;
   opts.active = false;
 
   s_scan_req = shos::bt::gap::Scan(opts, ScanCB);
